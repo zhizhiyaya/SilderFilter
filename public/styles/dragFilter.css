@@ -1,0 +1,116 @@
+.m-pop-box {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1001;
+  background: #fff;
+  color: #666;
+  font-size: 0;
+  border-top: 1px solid #f2f2f2;
+  -webkit-transition: transform .2s ease;
+  transition: transform .2s ease;
+}
+.m-pop-box .pop-box {
+  padding: .1rem .01rem 0 .13rem;
+}
+.m-pop-box .caption {
+  height: .46rem;
+  line-height: .46rem;
+  font-size: .12rem;
+  color: #333;
+}
+
+.not-animated {
+  transition: none;
+}
+
+.m-dragprogress {
+  margin-top: .06rem;
+  padding: 0 0.12rem .2rem;
+  border-bottom: 1px solid #d4d4d4;
+}
+.m-dragprogress .m-dragprogress-hd {
+  padding: 0 .15rem;
+}
+.m-dragprogress .m-dragprogress-hd .range-list {
+  position: relative;
+  height: .3rem;
+}
+.m-dragprogress .m-dragprogress-hd .range-list li {
+  display: inline-block;
+  position: absolute;
+  min-width: .3rem;
+  margin-left: -.15rem;
+  font-size: 12px;
+  text-align: center;
+  color: #ccc;
+}
+.m-dragprogress .m-dragprogress-hd .range-list li .price {
+  height: .26rem;
+  line-height: .26rem;
+}
+.m-dragprogress .m-dragprogress-hd .range-list li .doc {
+  display: block;
+  height: .04rem;
+  line-height: .04rem;
+}
+.m-dragprogress .m-dragprogress-hd .range-list li .current {
+  color: #00bcd4;
+}
+.m-dragprogress .m-dragprogress-bd {
+  position: relative;
+  height: .02rem;
+  margin: .2rem .15rem;
+  background: #e6e6e6;
+  border-radius: 1px;
+}
+.m-dragprogress .m-dragprogress-bd .range-bar {
+  position: absolute;
+  height: .02rem;
+  top: 0;
+  left: 0;
+  right: 0;
+  min-width: 20%;
+  max-width: 100%;
+  background-color: #00bcd4;
+  transition: none;
+}
+.m-dragprogress .m-dragprogress-bd .transition {
+  -webkit-transition: transform .3s ease;
+  transition: transform .3s ease;
+}
+.m-dragprogress .m-dragprogress-bd .range-pointer {
+  position: absolute;
+  z-index: 10;
+  top: -15px;
+  width: 31px;
+  height: 33px;
+  background: url(http://s.qunarzz.com/ugchybrid/pages/place/range-bar.png) center center no-repeat;
+  background-size: 100%;
+}
+.m-dragprogress .m-dragprogress-bd .range-pointer-left {
+  left: -.15rem;
+}
+.m-dragprogress .m-dragprogress-bd .range-pointer-right {
+  right: -.15rem;
+}
+
+.m-filter-ft {
+  text-align: center;
+  padding: .05rem .13rem;
+  background: #fff;
+  background-color: #eee;
+}
+.m-filter-ft .btn {
+  display: block;
+  height: .36rem;
+  line-height: .36rem;
+}
+.m-filter-ft .btn-submit {
+  margin: 0;
+  font-size: .16rem;
+  background: #00bcd4;
+  border-color: #00bcd4;
+}
+
+/*# sourceMappingURL=dragFilter.css.map */
