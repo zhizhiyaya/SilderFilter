@@ -5,8 +5,6 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var extractCSS = new ExtractTextPlugin('/public/stylesheets/[name].css',{allChunks: true});
 var extractLESS = new ExtractTextPlugin('/public/stylesheets/[name].less',{allChunks: true});
 
-//console.log(path.resolve('./node_modules'));
-
 module.exports = {
     //context: path,
     //插件项
@@ -14,7 +12,8 @@ module.exports = {
 
     //页面入口文件配置
     entry: {
-        dragFilter: './public/scripts/dragFilter.js',
+		dragFilterTest: './public/scripts/dragFilterTest.js'
+        // dragFilter: './public/scripts/dragFilter.js',
         //dragProgress: './module/dragProgress/index.js',
         //popBox: './module/popBox/index.js'
     },

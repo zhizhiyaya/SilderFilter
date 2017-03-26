@@ -1,5 +1,5 @@
-require('zepto');
-//var $ = {};
+require('zepto-touch');
+
 var Hogan = require('hogan.js');
 var util = require('../common/util.js');
 var dragprogressTpl = require('./index.coffee'),
@@ -236,8 +236,3 @@ DragProgress.prototype = {
 };
 
 module.exports = DragProgress;
-
-
-
-
-

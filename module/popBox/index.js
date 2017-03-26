@@ -1,9 +1,9 @@
-require('zepto');
+require('zepto-touch');
 var util = require('../common/util.js');
 
 var boxTpl = require('./index.coffee'),
     SWITCHBTN = '.js-switch-btn', // 默认在头里的开关按钮
-    PAGE_HEADER = '.yo-header-ugc',  // 页面的头
+    PAGE_HEADER = '.m-header-ugc',  // 页面的头
     BOX_CONTAINER = '.js-pop-box', // box container
     BOX_MASK = '.js-box-mask', // MASK
     BOX_HEIGHT = 192,
@@ -14,8 +14,7 @@ var boxTpl = require('./index.coffee'),
     isLowerAd = false; // 低版本安卓
 
 function PopBox(option) {
-
-    this.rootContext = option && option.context || 'document';
+    this.root = option && option.context || document.body;
     this.option = util.extend({},
         {'height' : BOX_HEIGHT, 'offsetTop': OFFSET_TOP,'isNeedAddBox': true}, // isNeedAddBox 默认需要 append Box 到 body, 视实际情况而定, box 写在 view 里就可以时,需设为 false
         option);
@@ -28,22 +27,21 @@ function PopBox(option) {
 PopBox.prototype = {
     constructor: PopBox,
     initPopBox: function () {
-
         this.initElement();
         this.renderBox();
-        this.bindEvent();
+        this.addSwitchEvent();
     },
     initElement: function () {
-        this.container = this.option.isNeedAddBox ? $(boxTpl.boxTmpl) : $(this.rootContext).find(BOX_CONTAINER);
-        this.mask = this.option.isNeedAddBox ? $(boxTpl.maskTmpl) : $(this.rootContext).find(BOX_MASK);
+        this.container = this.option.isNeedAddBox ? $(boxTpl.boxTmpl) : $(this.root).find(BOX_CONTAINER);
+        this.mask = this.option.isNeedAddBox ? $(boxTpl.maskTmpl) : $(this.root).find(BOX_MASK);
 
-        this.viewHeader = $(this.rootContext).find(PAGE_HEADER);
-        this.switchBtn = $(this.rootContext).find(SWITCHBTN);
+        this.viewHeader = $(this.root).find(PAGE_HEADER);
+        this.switchBtn = $(this.root).find(SWITCHBTN);
     },
     renderBox: function () {
         if (this.option.isNeedAddBox) {
 
-            var boxMask = !this.hasBox && $('document').find(BOX_MASK);
+            var boxMask = !this.hasBox && $(document.body).find(BOX_MASK);
             if (util.isArray(boxMask) && boxMask.length === 0) {
 
                 this._addPopBox();
@@ -52,10 +50,10 @@ PopBox.prototype = {
             this._setPopBoxStyle();
         }
     },
-    bindEvent: function () {
+    addSwitchEvent: function () {
         var self = this;
         self.switchBtn.on('tap', function (e) {
-            e.stopPropagation();
+			e.stopPropagation();
             self.switch();
         });
 
@@ -81,7 +79,7 @@ PopBox.prototype = {
         var self = this;
 
         // 左滑块容易触发回退手势,回退到上个页面,这里禁用一下
-        self.option.onShow();
+        self.option.onShow && self.option.onShow();
 
         if (self.option.isNeedAddBox && !self.isCloneHeader) {
 

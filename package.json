@@ -8,10 +8,10 @@
     "coffee-script": "^1.10.0",
     "extract-text-webpack-plugin": "^1.0.1",
     "hogan": "^1.0.2",
-    "jquery": "^3.1.0",
     "loader-utils": "^0.2.15",
     "webpack": "^1.13.1",
-    "zepto": "^1.2.0"
+    "zepto": "^1.2.0",
+    "zepto-touch": "0.0.4"
   },
   "devDependencies": {},
   "scripts": {

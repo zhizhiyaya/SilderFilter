@@ -1,3 +1,4 @@
+require('zepto-touch');
 
 var util = require('../../module/common/util.js');
 
@@ -5,9 +6,7 @@ var PopBox = require('../../module/popBox/index.js'),
     DragProgress = require('../../module/dragProgress/index.js');
 
 function DragFilter (options) {
-
     PopBox.call(this, options);
-
     this.init();
 }
 
@@ -18,6 +17,8 @@ DragFilter.prototype = {
         this.initElement();
         this.dragProgress.container.prependTo(this.container);
         this.renderBox();
+		debugger
+		this.addSwitchEvent();
         this.addEvent();
     },
     addEvent: function (options) {
@@ -61,5 +62,4 @@ DragFilter.prototype = {
 };
 DragFilter.prototype = util.extend({}, new PopBox(), DragFilter.prototype);
 
-new DragFilter();
 module.exports = DragFilter;

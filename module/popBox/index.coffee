@@ -4,7 +4,7 @@ boxTmpl = '''
 '''
 
 maskTmpl = '''
-<div class="yo-mask js-box-mask" style="top: 44px;"></div>
+<div class="m-mask js-box-mask" style="top: 44px;"></div>
 '''
 
 module.exports = {

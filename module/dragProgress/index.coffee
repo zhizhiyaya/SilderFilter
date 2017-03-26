@@ -1,11 +1,11 @@
 html = '''
 <div class="m-dragprogress">
     <h2 class="caption">价格区间</h2>
-    <div class="yo-dragprogress-hd">
+    <div class="m-dragprogress-hd">
         <ul class="range-list">
             {{#prices}}
             <li class="current" data-role="dp-point-name" style="left: {{left}}%">
-                <span class="price">{{{name}}}</span><span class="doc"><i class="yo-ico">&#xf083;</i></span>
+                <span class="price">{{{name}}}</span><span class="doc">·</span>
             </li>
             {{/prices}}
         </ul>

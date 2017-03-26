@@ -2,16 +2,35 @@
 <html>
 <head>
     <title>dragFilter</title>
-    <style>
-        html{
-            font-size: 200px;
-        }
-    </style>
-    <link rel="stylesheet" href='../public/styles/dragFilter.css' />
+	<link rel="stylesheet" href='../public/styles/reset.css' />
+	<link rel="stylesheet" href='../public/styles/dragFilter.css' />
+	<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+	<meta name="format-detection" content="telephone=no,email=no">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black">
 
+	<!-- UC默认竖屏 ，UC强制全屏 -->
+	<meta name="full-screen" content="yes">
+	<meta name="browsermode" content="application">
+	<!-- QQ强制竖屏 QQ强制全屏 -->
+	<meta name="x5-orientation" content="portrait">
+	<meta name="x5-fullscreen" content="true">
+	<meta name="x5-page-mode" content="app">
+
+	<script type="text/javascript">
+		document.ontouchmove = function(e) {
+			if (e.target.tagName.toUpperCase() !== 'IFRAME') {
+				e.preventDefault();
+			}
+		};
+	    window.firstPaintTime = Date.now();
+	</script>
 </head>
 <body>
 <div class="js-switch-btn">switch</div>
-<script src="../dist/scripts/dragFilter.js"></script>
+<script src="../dist/scripts/dragFilterTest.js"></script>
+<script>
+
+</script>
 </body>
 </html>
