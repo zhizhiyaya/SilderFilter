@@ -44,418 +44,24 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	__webpack_require__(11);
-
-	var util = __webpack_require__(1);
-
-	var PopBox = __webpack_require__(2),
-	    DragProgress = __webpack_require__(5);
-
-	function DragFilter (options) {
-	    PopBox.call(this, options);
-	    this.init();
-	}
-
-	DragFilter.prototype = {
-	    constructor: DragFilter,
-	    init: function () {
-	        this.dragProgress = new DragProgress();
-	        this.initElement();
-	        this.dragProgress.container.prependTo(this.container);
-	        this.renderBox();
-			debugger
-			this.addSwitchEvent();
-	        this.addEvent();
-	    },
-	    addEvent: function (options) {
-	        var self = this;
-	        self.container.on('touchmove', function(e) {
-	            e.stopPropagation();
-	        });
-	        self.container.on('tap', '.js-submit', function () {
-	            self.filter();
-	        });
-
-	        self.mask.on('touchmove', function (e) {
-	            e.stopPropagation();
-	        });
-
-	        self.mask.on('tap', function (e) {
-	            e.preventDefault();
-	            self.dragProgress.reviseProgress();
-	            self.animateHide();
-	        });
-	    },
-	    filter: function () {
-	        var self = this;
-	        var filterData = self.dragProgress.getSelectedData();
-
-	        if (filterData ){
-	            self.option.callback && self.option.callback(filterData);
-
-	            if (filterData === '' || filterData === '0,不限') {
-	                self.switchBtn.html('筛选');
-	            } else {
-	                self.switchBtn.html('已筛选');
-	            }
-	        }
-	        self.animateHide();
-	    },
-	    reset: function () {
-	        this.dragProgress.resetProgress();
-	        this.filter();
-	    }
-	};
-	DragFilter.prototype = util.extend({}, new PopBox(), DragFilter.prototype);
-
-	module.exports = DragFilter;
-
-
-/***/ },
-/* 1 */
-/***/ function(module, exports) {
-
-	var util = {
-	    trim: function (str) {
-	        return str.replace(/^\s+|\s+$/g, '');
-	    },
-	    isString: function(obj){ return typeof obj == 'string' },
-
-	    isFunction: function (value) { return type(value) == "function" },
-
-	    isWindow: function (obj) { return obj != null && obj == obj.window },
-
-	    isDocument: function(obj) { return obj != null && obj.nodeType == obj.DOCUMENT_NODE },
-
-	    isObject: function(obj) { return type(obj) == "object" },
-
-	    isPlainObject: function (obj) {
-	        return isObject(obj) && !isWindow(obj) && Object.getPrototypeOf(obj) == Object.prototype
-	    },
-
-	    isArray: Array.isArray ||
-	    function(object){ return object instanceof Array },
-
-	    extend: function(target){
-	        var deep, args = [].slice.call(arguments, 1);
-	        if (typeof target == 'boolean') {
-	            deep = target
-	            target = args.shift()
-	        }
-	        args.forEach(function(arg){ extend(target, arg, deep) });
-	        return target;
-	    },
-
-	    formatFormData: function (data) {
-	        var arr = data.split('&');
-	        var itemData;
-	        var formData = {};
-
-	        arr.forEach(function(item, index) {
-
-	            itemData = item.split('=');
-	            formData[util.trim(itemData[0])] = util.trim(itemData[1]);
-	        });
-
-	        return formData;
-	    }
-
-	};
-	var class2type = {},
-	    toString = class2type.toString;
-
-	function type(obj) {
-	    return obj == null ? String(obj) :
-	    class2type[toString.call(obj)] || "object"
-	}
-
-	function extend(target, source, deep) {
-	    for (key in source)
-	        if (deep && (util.isPlainObject(source[key]) || util.isArray(source[key]))) {
-	            if (util.isPlainObject(source[key]) && !util.isPlainObject(target[key]))
-	                target[key] = {}
-	            if (isArray(source[key]) && !util.isArray(target[key]))
-	                target[key] = []
-	            extend(target[key], source[key], deep)
-	        }
-	        else if (source[key] !== undefined) target[key] = source[key]
-	}
-
-	module.exports = util;
-
-/***/ },
-/* 2 */
-/***/ function(module, exports, __webpack_require__) {
-
-	__webpack_require__(11);
-	var util = __webpack_require__(1);
-
-	var boxTpl = __webpack_require__(4),
-	    SWITCHBTN = '.js-switch-btn', // 默认在头里的开关按钮
-	    PAGE_HEADER = '.m-header-ugc',  // 页面的头
-	    BOX_CONTAINER = '.js-pop-box', // box container
-	    BOX_MASK = '.js-box-mask', // MASK
-	    BOX_HEIGHT = 192,
-	    OFFSET_TOP = 0, // IOS 记得 + 20
-	    HEADER_HEIGHT = 44,
-	    ANIMATION_DURATION = 200,
-	    isIos = false
-	    isLowerAd = false; // 低版本安卓
-
-	function PopBox(option) {
-	    this.root = option && option.context || document.body;
-	    this.option = util.extend({},
-	        {'height' : BOX_HEIGHT, 'offsetTop': OFFSET_TOP,'isNeedAddBox': true}, // isNeedAddBox 默认需要 append Box 到 body, 视实际情况而定, box 写在 view 里就可以时,需设为 false
-	        option);
-	    isIos = !!this.option.isIos;
-	    isLowerAd = !!this.option.isLowerAd;
-	    this.isOpen = false;
-	    this.hasBox = false;
-	}
-
-	PopBox.prototype = {
-	    constructor: PopBox,
-	    initPopBox: function () {
-	        this.initElement();
-	        this.renderBox();
-	        this.addSwitchEvent();
-	    },
-	    initElement: function () {
-	        this.container = this.option.isNeedAddBox ? $(boxTpl.boxTmpl) : $(this.root).find(BOX_CONTAINER);
-	        this.mask = this.option.isNeedAddBox ? $(boxTpl.maskTmpl) : $(this.root).find(BOX_MASK);
-
-	        this.viewHeader = $(this.root).find(PAGE_HEADER);
-	        this.switchBtn = $(this.root).find(SWITCHBTN);
-	    },
-	    renderBox: function () {
-	        if (this.option.isNeedAddBox) {
-
-	            var boxMask = !this.hasBox && $(document.body).find(BOX_MASK);
-	            if (util.isArray(boxMask) && boxMask.length === 0) {
-
-	                this._addPopBox();
-	            }
-	        } else {
-	            this._setPopBoxStyle();
-	        }
-	    },
-	    addSwitchEvent: function () {
-	        var self = this;
-	        self.switchBtn.on('tap', function (e) {
-				e.stopPropagation();
-	            self.switch();
-	        });
-
-	        self.container.on('touchmove', function(e) {
-	            e.stopPropagation();
-	        });
-	    },
-	    // 单击操作下 显示或隐藏
-	    switch: function () {
-
-	        var self = this;
-
-	        if (self.isOpen) {
-	            self.animateHide();
-	        } else {
-	            self.show();
-	        }
-	    },
-	    /**
-	     * @method 显示 GEO 筛选
-	     */
-	    show: function () {
-	        var self = this;
-
-	        // 左滑块容易触发回退手势,回退到上个页面,这里禁用一下
-	        self.option.onShow && self.option.onShow();
-
-	        if (self.option.isNeedAddBox && !self.isCloneHeader) {
-
-	            self._cloneHeader();
-	        }
-
-	        self.isOpen = true;
-	        // menu show
-	        var targetTransformY = Math.floor(BOX_HEIGHT);
-
-	        if (this.option.isNeedAddBox) {
-	            targetTransformY += HEADER_HEIGHT + this.option.offsetTop
-	        }
-
-	        var targetTransformYCssRule = 'translateY(' + targetTransformY + 'px)';
-
-
-
-	        if (isLowerAd) {
-	            // 低版本安卓
-	            self.container.addClass('not-animated');
-	        } else {
-	            //可用动画的
-	            self.container.removeClass('not-animated');
-	        }
-
-	        self.container
-	            .css({
-	                'transform': targetTransformYCssRule,
-	                '-webkit-transform': targetTransformYCssRule
-	            });
-
-	        self.mask.show();
-
-	        self.option.isNeedAddBox && setTimeout(function () {
-
-	            self._removeFakeHeader();
-
-	        }, ANIMATION_DURATION * 2);
-	    },
-	    /**
-	     * @method 带动画的隐藏 BOX
-	     */
-	    animateHide: function () {
-
-	        var self = this;
-
-	        if (self.option.isNeedAddBox && !self.isCloneHeader) {
-
-	            this._cloneHeader();
-	        }
-
-	        self._setTranslateY();
-
-	        self.mask.hide();
-
-	        setTimeout(function () {
-
-	            self.option.isNeedAddBox && self._removeFakeHeader();
-
-	            self.isOpen = false;  // 保证菜单已被收起
-
-	        }, ANIMATION_DURATION * 2);
-
-	        // 恢复手势回退
-	        self.option.onHide();
-	    },
-	    /**
-	     * @method 不带动画的隐藏 BOX, 比如在发现页切换到别的页面时
-	     */
-	    hide: function () {
-	        var self = this;
-
-	        self.container.addClass('not-animated');
-	        self.mask.hide();
-
-	        self.isOpen = false;
-
-	        self._setTranslateY();
-
-	        // 恢复手势回退
-	        self.option.onHide();
-	    },
-	    //设置
-	    _setTranslateY: function () {
-	        var self = this;
-	        var targetTransformYCssRule = 'translateY(0)';
-
-	        self.container.css({
-	            'transform': targetTransformYCssRule,
-	            '-webkit-transform': targetTransformYCssRule
-	        });
-	    },
-	    /**
-	     * @method 将容器和 mask 添加到body
-	     */
-	    _addPopBox: function () {
-	        this._setPopBoxStyle();
-	        this.container.appendTo(document.body);
-
-	        this.mask.css({
-	                display: 'none',
-	                top: BOX_HEIGHT
-	            })
-	            .appendTo(document.body);
-	    },
-	    _setPopBoxStyle: function () {
-	        var styleOpt = {
-	            top: -BOX_HEIGHT,
-	            height: BOX_HEIGHT
-	        };
-	        if (this.option.isNeedAddBox) {
-	            styleOpt = util.extend({}, styleOpt, {'zIndex': 3001})
-	        }
-
-	        this.container.css(styleOpt);
-	    },
-	    _cloneHeader: function () {
-
-	        var cssRule = {
-	            'zIndex': 9999
-	        };
-
-	        this.fakeHeader = $(this.viewHeader).clone();
-
-	        var iHeight = $(this.viewHeader).height();
-	        var fakeHeaderHeight = iHeight + 20 + 'px';
-
-	        isIos && util.extend(cssRule, {'paddingTop': this.option.offsetTop, 'height': fakeHeaderHeight});
-
-	        this.fakeHeader.css(cssRule)
-	            .appendTo(document.body);
-
-	        this.isCloneHeader = true;
-	    },
-	    //移除假头
-	    _removeFakeHeader: function () {
-	        var self = this;
-	        if (self.isCloneHeader && self.fakeHeader) {
-	            self.fakeHeader.remove();
-	            self.isCloneHeader = false;
-	        }
-	    }
-	};
-
-	module.exports = PopBox;
-
-
-/***/ },
-/* 3 */,
-/* 4 */
-/***/ function(module, exports) {
-
-	var boxTmpl, maskTmpl;
-
-	boxTmpl = '<div class="m-pop-box js-pop-box">\n</div>';
-
-	maskTmpl = '<div class="m-mask js-box-mask" style="top: 44px;"></div>';
-
-	module.exports = {
-	  boxTmpl: boxTmpl,
-	  maskTmpl: maskTmpl
-	};
-
-
-/***/ },
-/* 5 */
-/***/ function(module, exports, __webpack_require__) {
-
-	__webpack_require__(11);
-
-	var Hogan = __webpack_require__(6);
-	var util = __webpack_require__(1);
-	var dragprogressTpl = __webpack_require__(9),
-	    PRICE_CONSTANT = __webpack_require__(10);
-
-	function DragProgress(data) {
-
+	__webpack_require__(1);
+
+	var Hogan = __webpack_require__(4);
+	var util = __webpack_require__(2);
+	var sliderTpl = __webpack_require__(7),
+	    PRICE_CONSTANT = __webpack_require__(8);
+
+	function Slider(data) {
+	debugger
 	    this.data = this.formatData(data || PRICE_CONSTANT);
 	    this.maxWidth = 0; // 纪录的实际的 px
 	    this.curWidth = 1;
 	    this.init();
 	}
 
-	DragProgress.prototype = {
+	Slider.prototype = {
 
-	    constructor: DragProgress,
+	    constructor: Slider,
 
 	    init: function () {
 	        this.getSelectedData();
@@ -466,58 +72,48 @@
 	    bindEvents: function () {
 	        var self = this;
 
-	        // progress 作为一个整体,只需改变其 left 和 width, 因为两个按钮相对于它绝对定位的
+	        // bar 作为一个整体,只需改变其 left 和 width, 因为两个按钮相对于它绝对定位的
 	        // 给两个 按钮注册事件, 是为了区分左右 , 更好处理逻辑
-	        self.progress
-	            .on('touchstart', '.range-pointer ', self._dragStart.bind(self))
-	            .on('touchmove', '.range-pointer ', self._dragMove.bind(self))
-	            .on('touchend', '.range-pointer ', self._dragEnd.bind(self));
+	        self.bar
+	            .on('touchstart', '.slider-handle', self._dragStart.bind(self))
+	            .on('touchmove', '.slider-handle', self._dragMove.bind(self))
+	            .on('touchend', '.slider-handle', self._dragEnd.bind(self));
 
 	        self.container.on('tap', '.js-submit', function () {
 	            self.filter();
 	        });
-
-	        //self.mask.on('touchmove', function (e) {
-	        //    e.stopPropagation();
-	        //});
-	        //
-	        //self.mask.on('tap', function (e) {
-	        //    e.preventDefault();
-	        //    self.dragProgress.reviseProgress();
-	        //    self.animateHide();
-	        //});
 	    },
 
 	    initElement: function () {
 
-	        var template = Hogan.compile(dragprogressTpl);
+	        var template = Hogan.compile(sliderTpl);
 
 	        this.container = $(template.render({
-	            'prices': this.data
-	        }));
-	        //
+				'data': this.data
+			}));
+	        // this.container = $(document.body);
 	        //// 拖拽的进度条
-	        this.progress = this.container.find('[data-role="dp-progress"]');
+	        this.bar = this.container.find('[data-role="slider-bar"]');
 	        //// 对应进度条的相应的文案
 	        this.points = this.container.find('[data-role="dp-point-name"]');
 	    },
-	    setProgressParam: function () {
-	        this.maxWidth = this.progress.width();
+	    setBarParam: function () {
+	        this.maxWidth = this.bar.width();
 	    },
 	    _dragStart: function (e) {
 	        e.preventDefault();
 
 	        if (!this.maxWidth) {
-	            this.setProgressParam();
+	            this.setBarParam();
 	        }
 	        var targetTouches = e.targetTouches[0];
 
 	        this.prvTouchX = targetTouches.clientX;
 
-	        this.realLeft = parseInt(this.progress.css('left'), 10) / 100;
-	        this.realRight = parseInt(this.progress.css('right'), 10) / 100;
+	        this.realLeft = parseInt(this.bar.css('left'), 10) / 100;
+	        this.realRight = parseInt(this.bar.css('right'), 10) / 100;
 
-	        this.progress.removeClass('transition');
+	        this.bar.removeClass('transition');
 	    },
 	    _dragMove: function (e) {
 	        e.preventDefault();
@@ -539,7 +135,7 @@
 	            this.realRight = 1 - this.minimum - this.realLeft;
 	        }
 
-	        this.progress.addClass('transition');
+	        this.bar.addClass('transition');
 
 	        this._setStyle({
 	            'left': this.realLeft,
@@ -561,7 +157,7 @@
 	    _towardLeftOrRight: function (target, xSpacing) {
 	        var targetData = $(target).data(),
 	            towardLeft = !!targetData.left,
-	            progressStyle = {},
+	            barStyle = {},
 	            isMin = this._isMinStatus();
 
 	        var curLeft = this.reviseRealPos(this.realLeft + xSpacing / this.maxWidth);
@@ -575,11 +171,11 @@
 
 	            if (xSpacing > 0 && isMin) {
 	                this.realRight = curRight;
-	                progressStyle = {'right': curRight};
+	                barStyle = {'right': curRight};
 	            }
 
 	            this.realLeft = curLeft;
-	            progressStyle = util.extend({}, progressStyle, {'left': curLeft});
+	            barStyle = util.extend({}, barStyle, {'left': curLeft});
 	        } else {
 
 	            if (this.realRight <= 0 && xSpacing > 0 || this.realRight >= this.maximum && xSpacing < 0) {
@@ -587,15 +183,15 @@
 	            }
 	            if (isMin && xSpacing < 0) {
 	                this.realLeft = curLeft;
-	                progressStyle = {'left': curLeft};
+	                barStyle = {'left': curLeft};
 	            }
 
 	            this.realRight = curRight;
-	            progressStyle = util.extend({}, progressStyle, {'right': curRight});
+	            barStyle = util.extend({}, barStyle, {'right': curRight});
 	        }
 	        var curWidth = 1 - this.realLeft - this.realRight;
 	        this.curWidth = curWidth;
-	        this._setStyle(progressStyle);
+	        this._setStyle(barStyle);
 	    },
 	    reviseRealPos: function (pos) {
 	        return pos <= this.maximum ? pos < 0 ? 0 : pos : this.maximum;
@@ -618,14 +214,14 @@
 
 	        this.rightIndex = Math.round(this.data.length - 1 - this.realRight / this.minimum);
 	    },
-	    _setStyle: function (progressStyle) {
+	    _setStyle: function (barStyle) {
 
 	        this._setSelectedDataIndex();
 
-	        for (key in progressStyle) {
-	            progressStyle[key] = progressStyle[key] * 100 + '%';
+	        for (key in barStyle) {
+	            barStyle[key] = barStyle[key] * 100 + '%';
 	        }
-	        this.progress.css(progressStyle);
+	        this.bar.css(barStyle);
 
 	        if (this.leftIndex > 0) {
 
@@ -658,14 +254,14 @@
 	                return elem;
 	            });
 	    },
-	    reviseProgress: function () {
+	    reviseBar: function () {
 	        var len = this.data.length;
 	        var allSelect = this.data[0].value + ',' + this.data[len - 1].value;
 	        if (this.selectedData === '' || this.selectedData === allSelect) {
-	            this.resetProgress();
+	            this.resetBar();
 	        }
 	    },
-	    resetProgress: function () {
+	    resetBar: function () {
 	        this.realLeft = 0;
 	        this.realRight = 0;
 	        this._setStyle({
@@ -675,851 +271,11 @@
 	    }
 	};
 
-	module.exports = DragProgress;
+	module.exports = Slider;
 
 
 /***/ },
-/* 6 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/*
-	 *  Copyright 2011 Twitter, Inc.
-	 *  Licensed under the Apache License, Version 2.0 (the "License");
-	 *  you may not use this file except in compliance with the License.
-	 *  You may obtain a copy of the License at
-	 *
-	 *  http://www.apache.org/licenses/LICENSE-2.0
-	 *
-	 *  Unless required by applicable law or agreed to in writing, software
-	 *  distributed under the License is distributed on an "AS IS" BASIS,
-	 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	 *  See the License for the specific language governing permissions and
-	 *  limitations under the License.
-	 */
-
-	// This file is for use with Node.js. See dist/ for browser files.
-
-	var Hogan = __webpack_require__(7);
-	Hogan.Template = __webpack_require__(8).Template;
-	Hogan.template = Hogan.Template;
-	module.exports = Hogan;
-
-
-/***/ },
-/* 7 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/*
-	 *  Copyright 2011 Twitter, Inc.
-	 *  Licensed under the Apache License, Version 2.0 (the "License");
-	 *  you may not use this file except in compliance with the License.
-	 *  You may obtain a copy of the License at
-	 *
-	 *  http://www.apache.org/licenses/LICENSE-2.0
-	 *
-	 *  Unless required by applicable law or agreed to in writing, software
-	 *  distributed under the License is distributed on an "AS IS" BASIS,
-	 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	 *  See the License for the specific language governing permissions and
-	 *  limitations under the License.
-	 */
-
-	(function (Hogan) {
-	  // Setup regex  assignments
-	  // remove whitespace according to Mustache spec
-	  var rIsWhitespace = /\S/,
-	      rQuot = /\"/g,
-	      rNewline =  /\n/g,
-	      rCr = /\r/g,
-	      rSlash = /\\/g,
-	      rLineSep = /\u2028/,
-	      rParagraphSep = /\u2029/;
-
-	  Hogan.tags = {
-	    '#': 1, '^': 2, '<': 3, '$': 4,
-	    '/': 5, '!': 6, '>': 7, '=': 8, '_v': 9,
-	    '{': 10, '&': 11, '_t': 12
-	  };
-
-	  Hogan.scan = function scan(text, delimiters) {
-	    var len = text.length,
-	        IN_TEXT = 0,
-	        IN_TAG_TYPE = 1,
-	        IN_TAG = 2,
-	        state = IN_TEXT,
-	        tagType = null,
-	        tag = null,
-	        buf = '',
-	        tokens = [],
-	        seenTag = false,
-	        i = 0,
-	        lineStart = 0,
-	        otag = '{{',
-	        ctag = '}}';
-
-	    function addBuf() {
-	      if (buf.length > 0) {
-	        tokens.push({tag: '_t', text: new String(buf)});
-	        buf = '';
-	      }
-	    }
-
-	    function lineIsWhitespace() {
-	      var isAllWhitespace = true;
-	      for (var j = lineStart; j < tokens.length; j++) {
-	        isAllWhitespace =
-	          (Hogan.tags[tokens[j].tag] < Hogan.tags['_v']) ||
-	          (tokens[j].tag == '_t' && tokens[j].text.match(rIsWhitespace) === null);
-	        if (!isAllWhitespace) {
-	          return false;
-	        }
-	      }
-
-	      return isAllWhitespace;
-	    }
-
-	    function filterLine(haveSeenTag, noNewLine) {
-	      addBuf();
-
-	      if (haveSeenTag && lineIsWhitespace()) {
-	        for (var j = lineStart, next; j < tokens.length; j++) {
-	          if (tokens[j].text) {
-	            if ((next = tokens[j+1]) && next.tag == '>') {
-	              // set indent to token value
-	              next.indent = tokens[j].text.toString()
-	            }
-	            tokens.splice(j, 1);
-	          }
-	        }
-	      } else if (!noNewLine) {
-	        tokens.push({tag:'\n'});
-	      }
-
-	      seenTag = false;
-	      lineStart = tokens.length;
-	    }
-
-	    function changeDelimiters(text, index) {
-	      var close = '=' + ctag,
-	          closeIndex = text.indexOf(close, index),
-	          delimiters = trim(
-	            text.substring(text.indexOf('=', index) + 1, closeIndex)
-	          ).split(' ');
-
-	      otag = delimiters[0];
-	      ctag = delimiters[delimiters.length - 1];
-
-	      return closeIndex + close.length - 1;
-	    }
-
-	    if (delimiters) {
-	      delimiters = delimiters.split(' ');
-	      otag = delimiters[0];
-	      ctag = delimiters[1];
-	    }
-
-	    for (i = 0; i < len; i++) {
-	      if (state == IN_TEXT) {
-	        if (tagChange(otag, text, i)) {
-	          --i;
-	          addBuf();
-	          state = IN_TAG_TYPE;
-	        } else {
-	          if (text.charAt(i) == '\n') {
-	            filterLine(seenTag);
-	          } else {
-	            buf += text.charAt(i);
-	          }
-	        }
-	      } else if (state == IN_TAG_TYPE) {
-	        i += otag.length - 1;
-	        tag = Hogan.tags[text.charAt(i + 1)];
-	        tagType = tag ? text.charAt(i + 1) : '_v';
-	        if (tagType == '=') {
-	          i = changeDelimiters(text, i);
-	          state = IN_TEXT;
-	        } else {
-	          if (tag) {
-	            i++;
-	          }
-	          state = IN_TAG;
-	        }
-	        seenTag = i;
-	      } else {
-	        if (tagChange(ctag, text, i)) {
-	          tokens.push({tag: tagType, n: trim(buf), otag: otag, ctag: ctag,
-	                       i: (tagType == '/') ? seenTag - otag.length : i + ctag.length});
-	          buf = '';
-	          i += ctag.length - 1;
-	          state = IN_TEXT;
-	          if (tagType == '{') {
-	            if (ctag == '}}') {
-	              i++;
-	            } else {
-	              cleanTripleStache(tokens[tokens.length - 1]);
-	            }
-	          }
-	        } else {
-	          buf += text.charAt(i);
-	        }
-	      }
-	    }
-
-	    filterLine(seenTag, true);
-
-	    return tokens;
-	  }
-
-	  function cleanTripleStache(token) {
-	    if (token.n.substr(token.n.length - 1) === '}') {
-	      token.n = token.n.substring(0, token.n.length - 1);
-	    }
-	  }
-
-	  function trim(s) {
-	    if (s.trim) {
-	      return s.trim();
-	    }
-
-	    return s.replace(/^\s*|\s*$/g, '');
-	  }
-
-	  function tagChange(tag, text, index) {
-	    if (text.charAt(index) != tag.charAt(0)) {
-	      return false;
-	    }
-
-	    for (var i = 1, l = tag.length; i < l; i++) {
-	      if (text.charAt(index + i) != tag.charAt(i)) {
-	        return false;
-	      }
-	    }
-
-	    return true;
-	  }
-
-	  // the tags allowed inside super templates
-	  var allowedInSuper = {'_t': true, '\n': true, '$': true, '/': true};
-
-	  function buildTree(tokens, kind, stack, customTags) {
-	    var instructions = [],
-	        opener = null,
-	        tail = null,
-	        token = null;
-
-	    tail = stack[stack.length - 1];
-
-	    while (tokens.length > 0) {
-	      token = tokens.shift();
-
-	      if (tail && tail.tag == '<' && !(token.tag in allowedInSuper)) {
-	        throw new Error('Illegal content in < super tag.');
-	      }
-
-	      if (Hogan.tags[token.tag] <= Hogan.tags['$'] || isOpener(token, customTags)) {
-	        stack.push(token);
-	        token.nodes = buildTree(tokens, token.tag, stack, customTags);
-	      } else if (token.tag == '/') {
-	        if (stack.length === 0) {
-	          throw new Error('Closing tag without opener: /' + token.n);
-	        }
-	        opener = stack.pop();
-	        if (token.n != opener.n && !isCloser(token.n, opener.n, customTags)) {
-	          throw new Error('Nesting error: ' + opener.n + ' vs. ' + token.n);
-	        }
-	        opener.end = token.i;
-	        return instructions;
-	      } else if (token.tag == '\n') {
-	        token.last = (tokens.length == 0) || (tokens[0].tag == '\n');
-	      }
-
-	      instructions.push(token);
-	    }
-
-	    if (stack.length > 0) {
-	      throw new Error('missing closing tag: ' + stack.pop().n);
-	    }
-
-	    return instructions;
-	  }
-
-	  function isOpener(token, tags) {
-	    for (var i = 0, l = tags.length; i < l; i++) {
-	      if (tags[i].o == token.n) {
-	        token.tag = '#';
-	        return true;
-	      }
-	    }
-	  }
-
-	  function isCloser(close, open, tags) {
-	    for (var i = 0, l = tags.length; i < l; i++) {
-	      if (tags[i].c == close && tags[i].o == open) {
-	        return true;
-	      }
-	    }
-	  }
-
-	  function stringifySubstitutions(obj) {
-	    var items = [];
-	    for (var key in obj) {
-	      items.push('"' + esc(key) + '": function(c,p,t,i) {' + obj[key] + '}');
-	    }
-	    return "{ " + items.join(",") + " }";
-	  }
-
-	  function stringifyPartials(codeObj) {
-	    var partials = [];
-	    for (var key in codeObj.partials) {
-	      partials.push('"' + esc(key) + '":{name:"' + esc(codeObj.partials[key].name) + '", ' + stringifyPartials(codeObj.partials[key]) + "}");
-	    }
-	    return "partials: {" + partials.join(",") + "}, subs: " + stringifySubstitutions(codeObj.subs);
-	  }
-
-	  Hogan.stringify = function(codeObj, text, options) {
-	    return "{code: function (c,p,i) { " + Hogan.wrapMain(codeObj.code) + " }," + stringifyPartials(codeObj) +  "}";
-	  }
-
-	  var serialNo = 0;
-	  Hogan.generate = function(tree, text, options) {
-	    serialNo = 0;
-	    var context = { code: '', subs: {}, partials: {} };
-	    Hogan.walk(tree, context);
-
-	    if (options.asString) {
-	      return this.stringify(context, text, options);
-	    }
-
-	    return this.makeTemplate(context, text, options);
-	  }
-
-	  Hogan.wrapMain = function(code) {
-	    return 'var t=this;t.b(i=i||"");' + code + 'return t.fl();';
-	  }
-
-	  Hogan.template = Hogan.Template;
-
-	  Hogan.makeTemplate = function(codeObj, text, options) {
-	    var template = this.makePartials(codeObj);
-	    template.code = new Function('c', 'p', 'i', this.wrapMain(codeObj.code));
-	    return new this.template(template, text, this, options);
-	  }
-
-	  Hogan.makePartials = function(codeObj) {
-	    var key, template = {subs: {}, partials: codeObj.partials, name: codeObj.name};
-	    for (key in template.partials) {
-	      template.partials[key] = this.makePartials(template.partials[key]);
-	    }
-	    for (key in codeObj.subs) {
-	      template.subs[key] = new Function('c', 'p', 't', 'i', codeObj.subs[key]);
-	    }
-	    return template;
-	  }
-
-	  function esc(s) {
-	    return s.replace(rSlash, '\\\\')
-	            .replace(rQuot, '\\\"')
-	            .replace(rNewline, '\\n')
-	            .replace(rCr, '\\r')
-	            .replace(rLineSep, '\\u2028')
-	            .replace(rParagraphSep, '\\u2029');
-	  }
-
-	  function chooseMethod(s) {
-	    return (~s.indexOf('.')) ? 'd' : 'f';
-	  }
-
-	  function createPartial(node, context) {
-	    var prefix = "<" + (context.prefix || "");
-	    var sym = prefix + node.n + serialNo++;
-	    context.partials[sym] = {name: node.n, partials: {}};
-	    context.code += 't.b(t.rp("' +  esc(sym) + '",c,p,"' + (node.indent || '') + '"));';
-	    return sym;
-	  }
-
-	  Hogan.codegen = {
-	    '#': function(node, context) {
-	      context.code += 'if(t.s(t.' + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,1),' +
-	                      'c,p,0,' + node.i + ',' + node.end + ',"' + node.otag + " " + node.ctag + '")){' +
-	                      't.rs(c,p,' + 'function(c,p,t){';
-	      Hogan.walk(node.nodes, context);
-	      context.code += '});c.pop();}';
-	    },
-
-	    '^': function(node, context) {
-	      context.code += 'if(!t.s(t.' + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,1),c,p,1,0,0,"")){';
-	      Hogan.walk(node.nodes, context);
-	      context.code += '};';
-	    },
-
-	    '>': createPartial,
-	    '<': function(node, context) {
-	      var ctx = {partials: {}, code: '', subs: {}, inPartial: true};
-	      Hogan.walk(node.nodes, ctx);
-	      var template = context.partials[createPartial(node, context)];
-	      template.subs = ctx.subs;
-	      template.partials = ctx.partials;
-	    },
-
-	    '$': function(node, context) {
-	      var ctx = {subs: {}, code: '', partials: context.partials, prefix: node.n};
-	      Hogan.walk(node.nodes, ctx);
-	      context.subs[node.n] = ctx.code;
-	      if (!context.inPartial) {
-	        context.code += 't.sub("' + esc(node.n) + '",c,p,i);';
-	      }
-	    },
-
-	    '\n': function(node, context) {
-	      context.code += write('"\\n"' + (node.last ? '' : ' + i'));
-	    },
-
-	    '_v': function(node, context) {
-	      context.code += 't.b(t.v(t.' + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,0)));';
-	    },
-
-	    '_t': function(node, context) {
-	      context.code += write('"' + esc(node.text) + '"');
-	    },
-
-	    '{': tripleStache,
-
-	    '&': tripleStache
-	  }
-
-	  function tripleStache(node, context) {
-	    context.code += 't.b(t.t(t.' + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,0)));';
-	  }
-
-	  function write(s) {
-	    return 't.b(' + s + ');';
-	  }
-
-	  Hogan.walk = function(nodelist, context) {
-	    var func;
-	    for (var i = 0, l = nodelist.length; i < l; i++) {
-	      func = Hogan.codegen[nodelist[i].tag];
-	      func && func(nodelist[i], context);
-	    }
-	    return context;
-	  }
-
-	  Hogan.parse = function(tokens, text, options) {
-	    options = options || {};
-	    return buildTree(tokens, '', [], options.sectionTags || []);
-	  }
-
-	  Hogan.cache = {};
-
-	  Hogan.cacheKey = function(text, options) {
-	    return [text, !!options.asString, !!options.disableLambda, options.delimiters, !!options.modelGet].join('||');
-	  }
-
-	  Hogan.compile = function(text, options) {
-	    options = options || {};
-	    var key = Hogan.cacheKey(text, options);
-	    var template = this.cache[key];
-
-	    if (template) {
-	      var partials = template.partials;
-	      for (var name in partials) {
-	        delete partials[name].instance;
-	      }
-	      return template;
-	    }
-
-	    template = this.generate(this.parse(this.scan(text, options.delimiters), text, options), text, options);
-	    return this.cache[key] = template;
-	  }
-	})( true ? exports : Hogan);
-
-
-/***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/*
-	 *  Copyright 2011 Twitter, Inc.
-	 *  Licensed under the Apache License, Version 2.0 (the "License");
-	 *  you may not use this file except in compliance with the License.
-	 *  You may obtain a copy of the License at
-	 *
-	 *  http://www.apache.org/licenses/LICENSE-2.0
-	 *
-	 *  Unless required by applicable law or agreed to in writing, software
-	 *  distributed under the License is distributed on an "AS IS" BASIS,
-	 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	 *  See the License for the specific language governing permissions and
-	 *  limitations under the License.
-	 */
-
-	var Hogan = {};
-
-	(function (Hogan) {
-	  Hogan.Template = function (codeObj, text, compiler, options) {
-	    codeObj = codeObj || {};
-	    this.r = codeObj.code || this.r;
-	    this.c = compiler;
-	    this.options = options || {};
-	    this.text = text || '';
-	    this.partials = codeObj.partials || {};
-	    this.subs = codeObj.subs || {};
-	    this.buf = '';
-	  }
-
-	  Hogan.Template.prototype = {
-	    // render: replaced by generated code.
-	    r: function (context, partials, indent) { return ''; },
-
-	    // variable escaping
-	    v: hoganEscape,
-
-	    // triple stache
-	    t: coerceToString,
-
-	    render: function render(context, partials, indent) {
-	      return this.ri([context], partials || {}, indent);
-	    },
-
-	    // render internal -- a hook for overrides that catches partials too
-	    ri: function (context, partials, indent) {
-	      return this.r(context, partials, indent);
-	    },
-
-	    // ensurePartial
-	    ep: function(symbol, partials) {
-	      var partial = this.partials[symbol];
-
-	      // check to see that if we've instantiated this partial before
-	      var template = partials[partial.name];
-	      if (partial.instance && partial.base == template) {
-	        return partial.instance;
-	      }
-
-	      if (typeof template == 'string') {
-	        if (!this.c) {
-	          throw new Error("No compiler available.");
-	        }
-	        template = this.c.compile(template, this.options);
-	      }
-
-	      if (!template) {
-	        return null;
-	      }
-
-	      // We use this to check whether the partials dictionary has changed
-	      this.partials[symbol].base = template;
-
-	      if (partial.subs) {
-	        // Make sure we consider parent template now
-	        if (!partials.stackText) partials.stackText = {};
-	        for (key in partial.subs) {
-	          if (!partials.stackText[key]) {
-	            partials.stackText[key] = (this.activeSub !== undefined && partials.stackText[this.activeSub]) ? partials.stackText[this.activeSub] : this.text;
-	          }
-	        }
-	        template = createSpecializedPartial(template, partial.subs, partial.partials,
-	          this.stackSubs, this.stackPartials, partials.stackText);
-	      }
-	      this.partials[symbol].instance = template;
-
-	      return template;
-	    },
-
-	    // tries to find a partial in the current scope and render it
-	    rp: function(symbol, context, partials, indent) {
-	      var partial = this.ep(symbol, partials);
-	      if (!partial) {
-	        return '';
-	      }
-
-	      return partial.ri(context, partials, indent);
-	    },
-
-	    // render a section
-	    rs: function(context, partials, section) {
-	      var tail = context[context.length - 1];
-
-	      if (!isArray(tail)) {
-	        section(context, partials, this);
-	        return;
-	      }
-
-	      for (var i = 0; i < tail.length; i++) {
-	        context.push(tail[i]);
-	        section(context, partials, this);
-	        context.pop();
-	      }
-	    },
-
-	    // maybe start a section
-	    s: function(val, ctx, partials, inverted, start, end, tags) {
-	      var pass;
-
-	      if (isArray(val) && val.length === 0) {
-	        return false;
-	      }
-
-	      if (typeof val == 'function') {
-	        val = this.ms(val, ctx, partials, inverted, start, end, tags);
-	      }
-
-	      pass = !!val;
-
-	      if (!inverted && pass && ctx) {
-	        ctx.push((typeof val == 'object') ? val : ctx[ctx.length - 1]);
-	      }
-
-	      return pass;
-	    },
-
-	    // find values with dotted names
-	    d: function(key, ctx, partials, returnFound) {
-	      var found,
-	          names = key.split('.'),
-	          val = this.f(names[0], ctx, partials, returnFound),
-	          doModelGet = this.options.modelGet,
-	          cx = null;
-
-	      if (key === '.' && isArray(ctx[ctx.length - 2])) {
-	        val = ctx[ctx.length - 1];
-	      } else {
-	        for (var i = 1; i < names.length; i++) {
-	          found = findInScope(names[i], val, doModelGet);
-	          if (found !== undefined) {
-	            cx = val;
-	            val = found;
-	          } else {
-	            val = '';
-	          }
-	        }
-	      }
-
-	      if (returnFound && !val) {
-	        return false;
-	      }
-
-	      if (!returnFound && typeof val == 'function') {
-	        ctx.push(cx);
-	        val = this.mv(val, ctx, partials);
-	        ctx.pop();
-	      }
-
-	      return val;
-	    },
-
-	    // find values with normal names
-	    f: function(key, ctx, partials, returnFound) {
-	      var val = false,
-	          v = null,
-	          found = false,
-	          doModelGet = this.options.modelGet;
-
-	      for (var i = ctx.length - 1; i >= 0; i--) {
-	        v = ctx[i];
-	        val = findInScope(key, v, doModelGet);
-	        if (val !== undefined) {
-	          found = true;
-	          break;
-	        }
-	      }
-
-	      if (!found) {
-	        return (returnFound) ? false : "";
-	      }
-
-	      if (!returnFound && typeof val == 'function') {
-	        val = this.mv(val, ctx, partials);
-	      }
-
-	      return val;
-	    },
-
-	    // higher order templates
-	    ls: function(func, cx, partials, text, tags) {
-	      var oldTags = this.options.delimiters;
-
-	      this.options.delimiters = tags;
-	      this.b(this.ct(coerceToString(func.call(cx, text)), cx, partials));
-	      this.options.delimiters = oldTags;
-
-	      return false;
-	    },
-
-	    // compile text
-	    ct: function(text, cx, partials) {
-	      if (this.options.disableLambda) {
-	        throw new Error('Lambda features disabled.');
-	      }
-	      return this.c.compile(text, this.options).render(cx, partials);
-	    },
-
-	    // template result buffering
-	    b: function(s) { this.buf += s; },
-
-	    fl: function() { var r = this.buf; this.buf = ''; return r; },
-
-	    // method replace section
-	    ms: function(func, ctx, partials, inverted, start, end, tags) {
-	      var textSource,
-	          cx = ctx[ctx.length - 1],
-	          result = func.call(cx);
-
-	      if (typeof result == 'function') {
-	        if (inverted) {
-	          return true;
-	        } else {
-	          textSource = (this.activeSub && this.subsText && this.subsText[this.activeSub]) ? this.subsText[this.activeSub] : this.text;
-	          return this.ls(result, cx, partials, textSource.substring(start, end), tags);
-	        }
-	      }
-
-	      return result;
-	    },
-
-	    // method replace variable
-	    mv: function(func, ctx, partials) {
-	      var cx = ctx[ctx.length - 1];
-	      var result = func.call(cx);
-
-	      if (typeof result == 'function') {
-	        return this.ct(coerceToString(result.call(cx)), cx, partials);
-	      }
-
-	      return result;
-	    },
-
-	    sub: function(name, context, partials, indent) {
-	      var f = this.subs[name];
-	      if (f) {
-	        this.activeSub = name;
-	        f(context, partials, this, indent);
-	        this.activeSub = false;
-	      }
-	    }
-
-	  };
-
-	  //Find a key in an object
-	  function findInScope(key, scope, doModelGet) {
-	    var val;
-
-	    if (scope && typeof scope == 'object') {
-
-	      if (scope[key] !== undefined) {
-	        val = scope[key];
-
-	      // try lookup with get for backbone or similar model data
-	      } else if (doModelGet && scope.get && typeof scope.get == 'function') {
-	        val = scope.get(key);
-	      }
-	    }
-
-	    return val;
-	  }
-
-	  function createSpecializedPartial(instance, subs, partials, stackSubs, stackPartials, stackText) {
-	    function PartialTemplate() {};
-	    PartialTemplate.prototype = instance;
-	    function Substitutions() {};
-	    Substitutions.prototype = instance.subs;
-	    var key;
-	    var partial = new PartialTemplate();
-	    partial.subs = new Substitutions();
-	    partial.subsText = {};  //hehe. substext.
-	    partial.buf = '';
-
-	    stackSubs = stackSubs || {};
-	    partial.stackSubs = stackSubs;
-	    partial.subsText = stackText;
-	    for (key in subs) {
-	      if (!stackSubs[key]) stackSubs[key] = subs[key];
-	    }
-	    for (key in stackSubs) {
-	      partial.subs[key] = stackSubs[key];
-	    }
-
-	    stackPartials = stackPartials || {};
-	    partial.stackPartials = stackPartials;
-	    for (key in partials) {
-	      if (!stackPartials[key]) stackPartials[key] = partials[key];
-	    }
-	    for (key in stackPartials) {
-	      partial.partials[key] = stackPartials[key];
-	    }
-
-	    return partial;
-	  }
-
-	  var rAmp = /&/g,
-	      rLt = /</g,
-	      rGt = />/g,
-	      rApos = /\'/g,
-	      rQuot = /\"/g,
-	      hChars = /[&<>\"\']/;
-
-	  function coerceToString(val) {
-	    return String((val === null || val === undefined) ? '' : val);
-	  }
-
-	  function hoganEscape(str) {
-	    str = coerceToString(str);
-	    return hChars.test(str) ?
-	      str
-	        .replace(rAmp, '&amp;')
-	        .replace(rLt, '&lt;')
-	        .replace(rGt, '&gt;')
-	        .replace(rApos, '&#39;')
-	        .replace(rQuot, '&quot;') :
-	      str;
-	  }
-
-	  var isArray = Array.isArray || function(a) {
-	    return Object.prototype.toString.call(a) === '[object Array]';
-	  };
-
-	})( true ? exports : Hogan);
-
-
-/***/ },
-/* 9 */
-/***/ function(module, exports) {
-
-	var html;
-
-	html = '<div class="m-dragprogress">\n    <h2 class="caption">价格区间</h2>\n    <div class="m-dragprogress-hd">\n        <ul class="range-list">\n            {{#prices}}\n            <li class="current" data-role="dp-point-name" style="left: {{left}}%">\n                <span class="price">{{{name}}}</span><span class="doc">·</span>\n            </li>\n            {{/prices}}\n        </ul>\n    </div>\n    <div class="m-dragprogress-bd">\n        <div class="range-bar" data-role="dp-progress">\n            <span class="range-pointer range-pointer-left" data-left="true" ></span>\n            <span class="range-pointer range-pointer-right" data-right="true"></span>\n        </div>\n    </div>\n</div>\n\n<div class="m-filter-ft">\n    <button class="m-filter-btn m-filter-btn-submit js-submit">确定</button>\n</div>';
-
-	module.exports = html;
-
-
-/***/ },
-/* 10 */
-/***/ function(module, exports) {
-
-	module.exports = [
-	    {
-	        value: 0,
-	        name: '&yen;0'
-	    },{
-	        value: 150,
-	        name: '&yen;150'
-	    },{
-	        value: 300,
-	        name: '&yen;300'
-	    },{
-	        value: 500,
-	        name: '&yen;500'
-	    },{
-	        value: 800,
-	        name: '&yen;800'
-	    },{
-	        value: '不限',
-	        name: '不限'
-	    }
-	];
-
-/***/ },
-/* 11 */
+/* 1 */
 /***/ function(module, exports) {
 
 	/* Zepto 1.2.0 - zepto event ajax form ie touch - zeptojs.com/license */
@@ -3328,6 +2084,919 @@
 	})(Zepto)
 	  
 
+
+/***/ },
+/* 2 */
+/***/ function(module, exports) {
+
+	var util = {
+	    trim: function (str) {
+	        return str.replace(/^\s+|\s+$/g, '');
+	    },
+	    isString: function(obj){ return typeof obj == 'string' },
+
+	    isFunction: function (value) { return type(value) == "function" },
+
+	    isWindow: function (obj) { return obj != null && obj == obj.window },
+
+	    isDocument: function(obj) { return obj != null && obj.nodeType == obj.DOCUMENT_NODE },
+
+	    isObject: function(obj) { return type(obj) == "object" },
+
+	    isPlainObject: function (obj) {
+	        return isObject(obj) && !isWindow(obj) && Object.getPrototypeOf(obj) == Object.prototype
+	    },
+
+	    isArray: Array.isArray ||
+	    function(object){ return object instanceof Array },
+
+	    extend: function(target){
+	        var deep, args = [].slice.call(arguments, 1);
+	        if (typeof target == 'boolean') {
+	            deep = target
+	            target = args.shift()
+	        }
+	        args.forEach(function(arg){ extend(target, arg, deep) });
+	        return target;
+	    },
+
+	    formatFormData: function (data) {
+	        var arr = data.split('&');
+	        var itemData;
+	        var formData = {};
+
+	        arr.forEach(function(item, index) {
+
+	            itemData = item.split('=');
+	            formData[util.trim(itemData[0])] = util.trim(itemData[1]);
+	        });
+
+	        return formData;
+	    }
+
+	};
+	var class2type = {},
+	    toString = class2type.toString;
+
+	function type(obj) {
+	    return obj == null ? String(obj) :
+	    class2type[toString.call(obj)] || "object"
+	}
+
+	function extend(target, source, deep) {
+	    for (key in source)
+	        if (deep && (util.isPlainObject(source[key]) || util.isArray(source[key]))) {
+	            if (util.isPlainObject(source[key]) && !util.isPlainObject(target[key]))
+	                target[key] = {}
+	            if (isArray(source[key]) && !util.isArray(target[key]))
+	                target[key] = []
+	            extend(target[key], source[key], deep)
+	        }
+	        else if (source[key] !== undefined) target[key] = source[key]
+	}
+
+	module.exports = util;
+
+/***/ },
+/* 3 */,
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*
+	 *  Copyright 2011 Twitter, Inc.
+	 *  Licensed under the Apache License, Version 2.0 (the "License");
+	 *  you may not use this file except in compliance with the License.
+	 *  You may obtain a copy of the License at
+	 *
+	 *  http://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 *  Unless required by applicable law or agreed to in writing, software
+	 *  distributed under the License is distributed on an "AS IS" BASIS,
+	 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 *  See the License for the specific language governing permissions and
+	 *  limitations under the License.
+	 */
+
+	// This file is for use with Node.js. See dist/ for browser files.
+
+	var Hogan = __webpack_require__(5);
+	Hogan.Template = __webpack_require__(6).Template;
+	Hogan.template = Hogan.Template;
+	module.exports = Hogan;
+
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*
+	 *  Copyright 2011 Twitter, Inc.
+	 *  Licensed under the Apache License, Version 2.0 (the "License");
+	 *  you may not use this file except in compliance with the License.
+	 *  You may obtain a copy of the License at
+	 *
+	 *  http://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 *  Unless required by applicable law or agreed to in writing, software
+	 *  distributed under the License is distributed on an "AS IS" BASIS,
+	 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 *  See the License for the specific language governing permissions and
+	 *  limitations under the License.
+	 */
+
+	(function (Hogan) {
+	  // Setup regex  assignments
+	  // remove whitespace according to Mustache spec
+	  var rIsWhitespace = /\S/,
+	      rQuot = /\"/g,
+	      rNewline =  /\n/g,
+	      rCr = /\r/g,
+	      rSlash = /\\/g,
+	      rLineSep = /\u2028/,
+	      rParagraphSep = /\u2029/;
+
+	  Hogan.tags = {
+	    '#': 1, '^': 2, '<': 3, '$': 4,
+	    '/': 5, '!': 6, '>': 7, '=': 8, '_v': 9,
+	    '{': 10, '&': 11, '_t': 12
+	  };
+
+	  Hogan.scan = function scan(text, delimiters) {
+	    var len = text.length,
+	        IN_TEXT = 0,
+	        IN_TAG_TYPE = 1,
+	        IN_TAG = 2,
+	        state = IN_TEXT,
+	        tagType = null,
+	        tag = null,
+	        buf = '',
+	        tokens = [],
+	        seenTag = false,
+	        i = 0,
+	        lineStart = 0,
+	        otag = '{{',
+	        ctag = '}}';
+
+	    function addBuf() {
+	      if (buf.length > 0) {
+	        tokens.push({tag: '_t', text: new String(buf)});
+	        buf = '';
+	      }
+	    }
+
+	    function lineIsWhitespace() {
+	      var isAllWhitespace = true;
+	      for (var j = lineStart; j < tokens.length; j++) {
+	        isAllWhitespace =
+	          (Hogan.tags[tokens[j].tag] < Hogan.tags['_v']) ||
+	          (tokens[j].tag == '_t' && tokens[j].text.match(rIsWhitespace) === null);
+	        if (!isAllWhitespace) {
+	          return false;
+	        }
+	      }
+
+	      return isAllWhitespace;
+	    }
+
+	    function filterLine(haveSeenTag, noNewLine) {
+	      addBuf();
+
+	      if (haveSeenTag && lineIsWhitespace()) {
+	        for (var j = lineStart, next; j < tokens.length; j++) {
+	          if (tokens[j].text) {
+	            if ((next = tokens[j+1]) && next.tag == '>') {
+	              // set indent to token value
+	              next.indent = tokens[j].text.toString()
+	            }
+	            tokens.splice(j, 1);
+	          }
+	        }
+	      } else if (!noNewLine) {
+	        tokens.push({tag:'\n'});
+	      }
+
+	      seenTag = false;
+	      lineStart = tokens.length;
+	    }
+
+	    function changeDelimiters(text, index) {
+	      var close = '=' + ctag,
+	          closeIndex = text.indexOf(close, index),
+	          delimiters = trim(
+	            text.substring(text.indexOf('=', index) + 1, closeIndex)
+	          ).split(' ');
+
+	      otag = delimiters[0];
+	      ctag = delimiters[delimiters.length - 1];
+
+	      return closeIndex + close.length - 1;
+	    }
+
+	    if (delimiters) {
+	      delimiters = delimiters.split(' ');
+	      otag = delimiters[0];
+	      ctag = delimiters[1];
+	    }
+
+	    for (i = 0; i < len; i++) {
+	      if (state == IN_TEXT) {
+	        if (tagChange(otag, text, i)) {
+	          --i;
+	          addBuf();
+	          state = IN_TAG_TYPE;
+	        } else {
+	          if (text.charAt(i) == '\n') {
+	            filterLine(seenTag);
+	          } else {
+	            buf += text.charAt(i);
+	          }
+	        }
+	      } else if (state == IN_TAG_TYPE) {
+	        i += otag.length - 1;
+	        tag = Hogan.tags[text.charAt(i + 1)];
+	        tagType = tag ? text.charAt(i + 1) : '_v';
+	        if (tagType == '=') {
+	          i = changeDelimiters(text, i);
+	          state = IN_TEXT;
+	        } else {
+	          if (tag) {
+	            i++;
+	          }
+	          state = IN_TAG;
+	        }
+	        seenTag = i;
+	      } else {
+	        if (tagChange(ctag, text, i)) {
+	          tokens.push({tag: tagType, n: trim(buf), otag: otag, ctag: ctag,
+	                       i: (tagType == '/') ? seenTag - otag.length : i + ctag.length});
+	          buf = '';
+	          i += ctag.length - 1;
+	          state = IN_TEXT;
+	          if (tagType == '{') {
+	            if (ctag == '}}') {
+	              i++;
+	            } else {
+	              cleanTripleStache(tokens[tokens.length - 1]);
+	            }
+	          }
+	        } else {
+	          buf += text.charAt(i);
+	        }
+	      }
+	    }
+
+	    filterLine(seenTag, true);
+
+	    return tokens;
+	  }
+
+	  function cleanTripleStache(token) {
+	    if (token.n.substr(token.n.length - 1) === '}') {
+	      token.n = token.n.substring(0, token.n.length - 1);
+	    }
+	  }
+
+	  function trim(s) {
+	    if (s.trim) {
+	      return s.trim();
+	    }
+
+	    return s.replace(/^\s*|\s*$/g, '');
+	  }
+
+	  function tagChange(tag, text, index) {
+	    if (text.charAt(index) != tag.charAt(0)) {
+	      return false;
+	    }
+
+	    for (var i = 1, l = tag.length; i < l; i++) {
+	      if (text.charAt(index + i) != tag.charAt(i)) {
+	        return false;
+	      }
+	    }
+
+	    return true;
+	  }
+
+	  // the tags allowed inside super templates
+	  var allowedInSuper = {'_t': true, '\n': true, '$': true, '/': true};
+
+	  function buildTree(tokens, kind, stack, customTags) {
+	    var instructions = [],
+	        opener = null,
+	        tail = null,
+	        token = null;
+
+	    tail = stack[stack.length - 1];
+
+	    while (tokens.length > 0) {
+	      token = tokens.shift();
+
+	      if (tail && tail.tag == '<' && !(token.tag in allowedInSuper)) {
+	        throw new Error('Illegal content in < super tag.');
+	      }
+
+	      if (Hogan.tags[token.tag] <= Hogan.tags['$'] || isOpener(token, customTags)) {
+	        stack.push(token);
+	        token.nodes = buildTree(tokens, token.tag, stack, customTags);
+	      } else if (token.tag == '/') {
+	        if (stack.length === 0) {
+	          throw new Error('Closing tag without opener: /' + token.n);
+	        }
+	        opener = stack.pop();
+	        if (token.n != opener.n && !isCloser(token.n, opener.n, customTags)) {
+	          throw new Error('Nesting error: ' + opener.n + ' vs. ' + token.n);
+	        }
+	        opener.end = token.i;
+	        return instructions;
+	      } else if (token.tag == '\n') {
+	        token.last = (tokens.length == 0) || (tokens[0].tag == '\n');
+	      }
+
+	      instructions.push(token);
+	    }
+
+	    if (stack.length > 0) {
+	      throw new Error('missing closing tag: ' + stack.pop().n);
+	    }
+
+	    return instructions;
+	  }
+
+	  function isOpener(token, tags) {
+	    for (var i = 0, l = tags.length; i < l; i++) {
+	      if (tags[i].o == token.n) {
+	        token.tag = '#';
+	        return true;
+	      }
+	    }
+	  }
+
+	  function isCloser(close, open, tags) {
+	    for (var i = 0, l = tags.length; i < l; i++) {
+	      if (tags[i].c == close && tags[i].o == open) {
+	        return true;
+	      }
+	    }
+	  }
+
+	  function stringifySubstitutions(obj) {
+	    var items = [];
+	    for (var key in obj) {
+	      items.push('"' + esc(key) + '": function(c,p,t,i) {' + obj[key] + '}');
+	    }
+	    return "{ " + items.join(",") + " }";
+	  }
+
+	  function stringifyPartials(codeObj) {
+	    var partials = [];
+	    for (var key in codeObj.partials) {
+	      partials.push('"' + esc(key) + '":{name:"' + esc(codeObj.partials[key].name) + '", ' + stringifyPartials(codeObj.partials[key]) + "}");
+	    }
+	    return "partials: {" + partials.join(",") + "}, subs: " + stringifySubstitutions(codeObj.subs);
+	  }
+
+	  Hogan.stringify = function(codeObj, text, options) {
+	    return "{code: function (c,p,i) { " + Hogan.wrapMain(codeObj.code) + " }," + stringifyPartials(codeObj) +  "}";
+	  }
+
+	  var serialNo = 0;
+	  Hogan.generate = function(tree, text, options) {
+	    serialNo = 0;
+	    var context = { code: '', subs: {}, partials: {} };
+	    Hogan.walk(tree, context);
+
+	    if (options.asString) {
+	      return this.stringify(context, text, options);
+	    }
+
+	    return this.makeTemplate(context, text, options);
+	  }
+
+	  Hogan.wrapMain = function(code) {
+	    return 'var t=this;t.b(i=i||"");' + code + 'return t.fl();';
+	  }
+
+	  Hogan.template = Hogan.Template;
+
+	  Hogan.makeTemplate = function(codeObj, text, options) {
+	    var template = this.makePartials(codeObj);
+	    template.code = new Function('c', 'p', 'i', this.wrapMain(codeObj.code));
+	    return new this.template(template, text, this, options);
+	  }
+
+	  Hogan.makePartials = function(codeObj) {
+	    var key, template = {subs: {}, partials: codeObj.partials, name: codeObj.name};
+	    for (key in template.partials) {
+	      template.partials[key] = this.makePartials(template.partials[key]);
+	    }
+	    for (key in codeObj.subs) {
+	      template.subs[key] = new Function('c', 'p', 't', 'i', codeObj.subs[key]);
+	    }
+	    return template;
+	  }
+
+	  function esc(s) {
+	    return s.replace(rSlash, '\\\\')
+	            .replace(rQuot, '\\\"')
+	            .replace(rNewline, '\\n')
+	            .replace(rCr, '\\r')
+	            .replace(rLineSep, '\\u2028')
+	            .replace(rParagraphSep, '\\u2029');
+	  }
+
+	  function chooseMethod(s) {
+	    return (~s.indexOf('.')) ? 'd' : 'f';
+	  }
+
+	  function createPartial(node, context) {
+	    var prefix = "<" + (context.prefix || "");
+	    var sym = prefix + node.n + serialNo++;
+	    context.partials[sym] = {name: node.n, partials: {}};
+	    context.code += 't.b(t.rp("' +  esc(sym) + '",c,p,"' + (node.indent || '') + '"));';
+	    return sym;
+	  }
+
+	  Hogan.codegen = {
+	    '#': function(node, context) {
+	      context.code += 'if(t.s(t.' + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,1),' +
+	                      'c,p,0,' + node.i + ',' + node.end + ',"' + node.otag + " " + node.ctag + '")){' +
+	                      't.rs(c,p,' + 'function(c,p,t){';
+	      Hogan.walk(node.nodes, context);
+	      context.code += '});c.pop();}';
+	    },
+
+	    '^': function(node, context) {
+	      context.code += 'if(!t.s(t.' + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,1),c,p,1,0,0,"")){';
+	      Hogan.walk(node.nodes, context);
+	      context.code += '};';
+	    },
+
+	    '>': createPartial,
+	    '<': function(node, context) {
+	      var ctx = {partials: {}, code: '', subs: {}, inPartial: true};
+	      Hogan.walk(node.nodes, ctx);
+	      var template = context.partials[createPartial(node, context)];
+	      template.subs = ctx.subs;
+	      template.partials = ctx.partials;
+	    },
+
+	    '$': function(node, context) {
+	      var ctx = {subs: {}, code: '', partials: context.partials, prefix: node.n};
+	      Hogan.walk(node.nodes, ctx);
+	      context.subs[node.n] = ctx.code;
+	      if (!context.inPartial) {
+	        context.code += 't.sub("' + esc(node.n) + '",c,p,i);';
+	      }
+	    },
+
+	    '\n': function(node, context) {
+	      context.code += write('"\\n"' + (node.last ? '' : ' + i'));
+	    },
+
+	    '_v': function(node, context) {
+	      context.code += 't.b(t.v(t.' + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,0)));';
+	    },
+
+	    '_t': function(node, context) {
+	      context.code += write('"' + esc(node.text) + '"');
+	    },
+
+	    '{': tripleStache,
+
+	    '&': tripleStache
+	  }
+
+	  function tripleStache(node, context) {
+	    context.code += 't.b(t.t(t.' + chooseMethod(node.n) + '("' + esc(node.n) + '",c,p,0)));';
+	  }
+
+	  function write(s) {
+	    return 't.b(' + s + ');';
+	  }
+
+	  Hogan.walk = function(nodelist, context) {
+	    var func;
+	    for (var i = 0, l = nodelist.length; i < l; i++) {
+	      func = Hogan.codegen[nodelist[i].tag];
+	      func && func(nodelist[i], context);
+	    }
+	    return context;
+	  }
+
+	  Hogan.parse = function(tokens, text, options) {
+	    options = options || {};
+	    return buildTree(tokens, '', [], options.sectionTags || []);
+	  }
+
+	  Hogan.cache = {};
+
+	  Hogan.cacheKey = function(text, options) {
+	    return [text, !!options.asString, !!options.disableLambda, options.delimiters, !!options.modelGet].join('||');
+	  }
+
+	  Hogan.compile = function(text, options) {
+	    options = options || {};
+	    var key = Hogan.cacheKey(text, options);
+	    var template = this.cache[key];
+
+	    if (template) {
+	      var partials = template.partials;
+	      for (var name in partials) {
+	        delete partials[name].instance;
+	      }
+	      return template;
+	    }
+
+	    template = this.generate(this.parse(this.scan(text, options.delimiters), text, options), text, options);
+	    return this.cache[key] = template;
+	  }
+	})( true ? exports : Hogan);
+
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/*
+	 *  Copyright 2011 Twitter, Inc.
+	 *  Licensed under the Apache License, Version 2.0 (the "License");
+	 *  you may not use this file except in compliance with the License.
+	 *  You may obtain a copy of the License at
+	 *
+	 *  http://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 *  Unless required by applicable law or agreed to in writing, software
+	 *  distributed under the License is distributed on an "AS IS" BASIS,
+	 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 *  See the License for the specific language governing permissions and
+	 *  limitations under the License.
+	 */
+
+	var Hogan = {};
+
+	(function (Hogan) {
+	  Hogan.Template = function (codeObj, text, compiler, options) {
+	    codeObj = codeObj || {};
+	    this.r = codeObj.code || this.r;
+	    this.c = compiler;
+	    this.options = options || {};
+	    this.text = text || '';
+	    this.partials = codeObj.partials || {};
+	    this.subs = codeObj.subs || {};
+	    this.buf = '';
+	  }
+
+	  Hogan.Template.prototype = {
+	    // render: replaced by generated code.
+	    r: function (context, partials, indent) { return ''; },
+
+	    // variable escaping
+	    v: hoganEscape,
+
+	    // triple stache
+	    t: coerceToString,
+
+	    render: function render(context, partials, indent) {
+	      return this.ri([context], partials || {}, indent);
+	    },
+
+	    // render internal -- a hook for overrides that catches partials too
+	    ri: function (context, partials, indent) {
+	      return this.r(context, partials, indent);
+	    },
+
+	    // ensurePartial
+	    ep: function(symbol, partials) {
+	      var partial = this.partials[symbol];
+
+	      // check to see that if we've instantiated this partial before
+	      var template = partials[partial.name];
+	      if (partial.instance && partial.base == template) {
+	        return partial.instance;
+	      }
+
+	      if (typeof template == 'string') {
+	        if (!this.c) {
+	          throw new Error("No compiler available.");
+	        }
+	        template = this.c.compile(template, this.options);
+	      }
+
+	      if (!template) {
+	        return null;
+	      }
+
+	      // We use this to check whether the partials dictionary has changed
+	      this.partials[symbol].base = template;
+
+	      if (partial.subs) {
+	        // Make sure we consider parent template now
+	        if (!partials.stackText) partials.stackText = {};
+	        for (key in partial.subs) {
+	          if (!partials.stackText[key]) {
+	            partials.stackText[key] = (this.activeSub !== undefined && partials.stackText[this.activeSub]) ? partials.stackText[this.activeSub] : this.text;
+	          }
+	        }
+	        template = createSpecializedPartial(template, partial.subs, partial.partials,
+	          this.stackSubs, this.stackPartials, partials.stackText);
+	      }
+	      this.partials[symbol].instance = template;
+
+	      return template;
+	    },
+
+	    // tries to find a partial in the current scope and render it
+	    rp: function(symbol, context, partials, indent) {
+	      var partial = this.ep(symbol, partials);
+	      if (!partial) {
+	        return '';
+	      }
+
+	      return partial.ri(context, partials, indent);
+	    },
+
+	    // render a section
+	    rs: function(context, partials, section) {
+	      var tail = context[context.length - 1];
+
+	      if (!isArray(tail)) {
+	        section(context, partials, this);
+	        return;
+	      }
+
+	      for (var i = 0; i < tail.length; i++) {
+	        context.push(tail[i]);
+	        section(context, partials, this);
+	        context.pop();
+	      }
+	    },
+
+	    // maybe start a section
+	    s: function(val, ctx, partials, inverted, start, end, tags) {
+	      var pass;
+
+	      if (isArray(val) && val.length === 0) {
+	        return false;
+	      }
+
+	      if (typeof val == 'function') {
+	        val = this.ms(val, ctx, partials, inverted, start, end, tags);
+	      }
+
+	      pass = !!val;
+
+	      if (!inverted && pass && ctx) {
+	        ctx.push((typeof val == 'object') ? val : ctx[ctx.length - 1]);
+	      }
+
+	      return pass;
+	    },
+
+	    // find values with dotted names
+	    d: function(key, ctx, partials, returnFound) {
+	      var found,
+	          names = key.split('.'),
+	          val = this.f(names[0], ctx, partials, returnFound),
+	          doModelGet = this.options.modelGet,
+	          cx = null;
+
+	      if (key === '.' && isArray(ctx[ctx.length - 2])) {
+	        val = ctx[ctx.length - 1];
+	      } else {
+	        for (var i = 1; i < names.length; i++) {
+	          found = findInScope(names[i], val, doModelGet);
+	          if (found !== undefined) {
+	            cx = val;
+	            val = found;
+	          } else {
+	            val = '';
+	          }
+	        }
+	      }
+
+	      if (returnFound && !val) {
+	        return false;
+	      }
+
+	      if (!returnFound && typeof val == 'function') {
+	        ctx.push(cx);
+	        val = this.mv(val, ctx, partials);
+	        ctx.pop();
+	      }
+
+	      return val;
+	    },
+
+	    // find values with normal names
+	    f: function(key, ctx, partials, returnFound) {
+	      var val = false,
+	          v = null,
+	          found = false,
+	          doModelGet = this.options.modelGet;
+
+	      for (var i = ctx.length - 1; i >= 0; i--) {
+	        v = ctx[i];
+	        val = findInScope(key, v, doModelGet);
+	        if (val !== undefined) {
+	          found = true;
+	          break;
+	        }
+	      }
+
+	      if (!found) {
+	        return (returnFound) ? false : "";
+	      }
+
+	      if (!returnFound && typeof val == 'function') {
+	        val = this.mv(val, ctx, partials);
+	      }
+
+	      return val;
+	    },
+
+	    // higher order templates
+	    ls: function(func, cx, partials, text, tags) {
+	      var oldTags = this.options.delimiters;
+
+	      this.options.delimiters = tags;
+	      this.b(this.ct(coerceToString(func.call(cx, text)), cx, partials));
+	      this.options.delimiters = oldTags;
+
+	      return false;
+	    },
+
+	    // compile text
+	    ct: function(text, cx, partials) {
+	      if (this.options.disableLambda) {
+	        throw new Error('Lambda features disabled.');
+	      }
+	      return this.c.compile(text, this.options).render(cx, partials);
+	    },
+
+	    // template result buffering
+	    b: function(s) { this.buf += s; },
+
+	    fl: function() { var r = this.buf; this.buf = ''; return r; },
+
+	    // method replace section
+	    ms: function(func, ctx, partials, inverted, start, end, tags) {
+	      var textSource,
+	          cx = ctx[ctx.length - 1],
+	          result = func.call(cx);
+
+	      if (typeof result == 'function') {
+	        if (inverted) {
+	          return true;
+	        } else {
+	          textSource = (this.activeSub && this.subsText && this.subsText[this.activeSub]) ? this.subsText[this.activeSub] : this.text;
+	          return this.ls(result, cx, partials, textSource.substring(start, end), tags);
+	        }
+	      }
+
+	      return result;
+	    },
+
+	    // method replace variable
+	    mv: function(func, ctx, partials) {
+	      var cx = ctx[ctx.length - 1];
+	      var result = func.call(cx);
+
+	      if (typeof result == 'function') {
+	        return this.ct(coerceToString(result.call(cx)), cx, partials);
+	      }
+
+	      return result;
+	    },
+
+	    sub: function(name, context, partials, indent) {
+	      var f = this.subs[name];
+	      if (f) {
+	        this.activeSub = name;
+	        f(context, partials, this, indent);
+	        this.activeSub = false;
+	      }
+	    }
+
+	  };
+
+	  //Find a key in an object
+	  function findInScope(key, scope, doModelGet) {
+	    var val;
+
+	    if (scope && typeof scope == 'object') {
+
+	      if (scope[key] !== undefined) {
+	        val = scope[key];
+
+	      // try lookup with get for backbone or similar model data
+	      } else if (doModelGet && scope.get && typeof scope.get == 'function') {
+	        val = scope.get(key);
+	      }
+	    }
+
+	    return val;
+	  }
+
+	  function createSpecializedPartial(instance, subs, partials, stackSubs, stackPartials, stackText) {
+	    function PartialTemplate() {};
+	    PartialTemplate.prototype = instance;
+	    function Substitutions() {};
+	    Substitutions.prototype = instance.subs;
+	    var key;
+	    var partial = new PartialTemplate();
+	    partial.subs = new Substitutions();
+	    partial.subsText = {};  //hehe. substext.
+	    partial.buf = '';
+
+	    stackSubs = stackSubs || {};
+	    partial.stackSubs = stackSubs;
+	    partial.subsText = stackText;
+	    for (key in subs) {
+	      if (!stackSubs[key]) stackSubs[key] = subs[key];
+	    }
+	    for (key in stackSubs) {
+	      partial.subs[key] = stackSubs[key];
+	    }
+
+	    stackPartials = stackPartials || {};
+	    partial.stackPartials = stackPartials;
+	    for (key in partials) {
+	      if (!stackPartials[key]) stackPartials[key] = partials[key];
+	    }
+	    for (key in stackPartials) {
+	      partial.partials[key] = stackPartials[key];
+	    }
+
+	    return partial;
+	  }
+
+	  var rAmp = /&/g,
+	      rLt = /</g,
+	      rGt = />/g,
+	      rApos = /\'/g,
+	      rQuot = /\"/g,
+	      hChars = /[&<>\"\']/;
+
+	  function coerceToString(val) {
+	    return String((val === null || val === undefined) ? '' : val);
+	  }
+
+	  function hoganEscape(str) {
+	    str = coerceToString(str);
+	    return hChars.test(str) ?
+	      str
+	        .replace(rAmp, '&amp;')
+	        .replace(rLt, '&lt;')
+	        .replace(rGt, '&gt;')
+	        .replace(rApos, '&#39;')
+	        .replace(rQuot, '&quot;') :
+	      str;
+	  }
+
+	  var isArray = Array.isArray || function(a) {
+	    return Object.prototype.toString.call(a) === '[object Array]';
+	  };
+
+	})( true ? exports : Hogan);
+
+
+/***/ },
+/* 7 */
+/***/ function(module, exports) {
+
+	var html;
+
+	html = '<div class="m-slider">\n    <h2 class="caption">价格区间</h2>\n    <div class="m-slider-hd">\n        <ul class="range-list">\n            {{#data}}\n            <li class="current" data-role="dp-point-name" style="left: {{left}}%">\n                <span class="price">{{{name}}}</span><span class="doc">·</span>\n            </li>\n            {{/data}}\n        </ul>\n    </div>\n    <div class="m-slider-bd">\n        <div class="slider-bar" data-role="slider-bar">\n            <span class="slider-handle slider-handle-left" data-left="true" ></span>\n            <span class="slider-handle slider-handle-right" data-right="true"></span>\n        </div>\n    </div>\n</div>\n\n<div class="m-filter-ft">\n    <button class="m-filter-btn m-filter-btn-submit js-submit">确定</button>\n</div>';
+
+	module.exports = html;
+
+
+/***/ },
+/* 8 */
+/***/ function(module, exports) {
+
+	module.exports = [
+	    {
+	        value: 0,
+	        name: '&yen;0'
+	    },{
+	        value: 150,
+	        name: '&yen;150'
+	    },{
+	        value: 300,
+	        name: '&yen;300'
+	    },{
+	        value: 500,
+	        name: '&yen;500'
+	    },{
+	        value: 800,
+	        name: '&yen;800'
+	    },{
+	        value: '不限',
+	        name: '不限'
+	    }
+	];
 
 /***/ }
 /******/ ]);

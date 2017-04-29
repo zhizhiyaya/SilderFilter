@@ -24,19 +24,19 @@
 	transition: none;
 }
 
-.m-dragprogress {
+.m-slider {
 	margin-top: .06rem;
 	padding: 0 0.12rem .2rem;
 	border-bottom: 1px solid #d4d4d4;
 }
-.m-dragprogress-hd {
+.m-slider-hd {
 	padding: 0 .15rem;
 }
-.m-dragprogress-hd .range-list {
+.m-slider-hd .range-list {
 	position: relative;
 	height: .3rem;
 }
-.m-dragprogress-hd .range-list li {
+.m-slider-hd .range-list li {
 	display: inline-block;
 	position: absolute;
 	min-width: .3rem;
@@ -45,11 +45,11 @@
 	text-align: center;
 	color: #ccc;
 }
-.m-dragprogress-hd .range-list .price {
+.m-slider-hd .range-list .price {
 	height: .26rem;
 	line-height: .26rem;
 }
-.m-dragprogress-hd .range-list .doc {
+.m-slider-hd .range-list .doc {
 	display: block;
 	height: .04rem;
 	line-height: .04rem;
@@ -57,17 +57,17 @@
 	font-size: .26rem;
 	text-align: center;
 }
-.m-dragprogress-hd .range-list .current {
+.m-slider-hd .range-list .current {
 	color: #00bcd4;
 }
-.m-dragprogress-bd {
+.m-slider-bd {
 	position: relative;
 	height: .02rem;
 	margin: .2rem .15rem;
 	background: #e6e6e6;
 	border-radius: 1px;
 }
-.m-dragprogress-bd .range-bar {
+.m-slider-bd .slider-bar {
 	position: absolute;
 	height: .02rem;
 	top: 0;
@@ -78,11 +78,11 @@
 	background-color: #00bcd4;
 	transition: none;
 }
-.m-dragprogress-bd .transition {
+.m-slider-bd .transition {
 	-webkit-transition: transform .3s ease;
 	transition: transform .3s ease;
 }
-.m-dragprogress-bd .range-pointer {
+.m-slider-bd .slider-handle {
 	position: absolute;
 	z-index: 10;
 	top: -15px;
@@ -91,10 +91,10 @@
 	background: url(http://s.qunarzz.com/ugchybrid/pages/place/range-bar.png) center center no-repeat;
 	background-size: 100%;
 }
-.m-dragprogress-bd .range-pointer-left {
+.m-slider-bd .slider-handle-left {
 	left: -.15rem;
 }
-.m-dragprogress-bd .range-pointer-right {
+.m-slider-bd .slider-handle-right {
 	right: -.15rem;
 }
 

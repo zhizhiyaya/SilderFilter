@@ -45,10 +45,11 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(1);
+	var util = __webpack_require__(2);
 
-	var boxTpl = __webpack_require__(2),
+	var boxTpl = __webpack_require__(3),
 	    SWITCHBTN = '.js-switch-btn', // 默认在头里的开关按钮
-	    PAGE_HEADER = '.yo-header-ugc',  // 页面的头
+	    PAGE_HEADER = '.m-header-ugc',  // 页面的头
 	    BOX_CONTAINER = '.js-pop-box', // box container
 	    BOX_MASK = '.js-box-mask', // MASK
 	    BOX_HEIGHT = 192,
@@ -59,13 +60,12 @@
 	    isLowerAd = false; // 低版本安卓
 
 	function PopBox(option) {
-
-	    this.rootContext = option && option.context || 'document';
-	    this.option = $.extend({},
+	    this.root = option && option.context || document.body;
+	    this.option = util.extend({},
 	        {'height' : BOX_HEIGHT, 'offsetTop': OFFSET_TOP,'isNeedAddBox': true}, // isNeedAddBox 默认需要 append Box 到 body, 视实际情况而定, box 写在 view 里就可以时,需设为 false
 	        option);
-	    isIos = !!option.isIos;
-	    isLowerAd = !!option.isLowerAd;
+	    isIos = !!this.option.isIos;
+	    isLowerAd = !!this.option.isLowerAd;
 	    this.isOpen = false;
 	    this.hasBox = false;
 	}
@@ -73,23 +73,22 @@
 	PopBox.prototype = {
 	    constructor: PopBox,
 	    initPopBox: function () {
-
 	        this.initElement();
 	        this.renderBox();
-	        this.bindEvent();
+	        this.addSwitchEvent();
 	    },
 	    initElement: function () {
-	        this.container = this.option.isNeedAddBox ? $(boxTpl.boxTmpl) : $(rootContext).find(BOX_CONTAINER);
-	        this.mask = this.option.isNeedAddBox ? $(boxTpl.maskTmpl) : $(rootContext).find(BOX_MASK);
+	        this.container = this.option.isNeedAddBox ? $(boxTpl.boxTmpl) : $(this.root).find(BOX_CONTAINER);
+	        this.mask = this.option.isNeedAddBox ? $(boxTpl.maskTmpl) : $(this.root).find(BOX_MASK);
 
-	        this.viewHeader = $(rootContext).find(PAGE_HEADER);
-	        this.switchBtn = $(rootContext).find(SWITCHBTN);
+	        this.viewHeader = $(this.root).find(PAGE_HEADER);
+	        this.switchBtn = $(this.root).find(SWITCHBTN);
 	    },
 	    renderBox: function () {
 	        if (this.option.isNeedAddBox) {
 
-	            var boxMask = !this.hasBox && $('document').find(BOX_MASK);
-	            if ($.isArray(boxMask) && boxMask.length === 0) {
+	            var boxMask = !this.hasBox && $(document.body).find(BOX_MASK);
+	            if (util.isArray(boxMask) && boxMask.length === 0) {
 
 	                this._addPopBox();
 	            }
@@ -97,10 +96,10 @@
 	            this._setPopBoxStyle();
 	        }
 	    },
-	    bindEvent: function () {
+	    addSwitchEvent: function () {
 	        var self = this;
 	        self.switchBtn.on('tap', function (e) {
-	            e.stopPropagation();
+				e.stopPropagation();
 	            self.switch();
 	        });
 
@@ -126,7 +125,7 @@
 	        var self = this;
 
 	        // 左滑块容易触发回退手势,回退到上个页面,这里禁用一下
-	        self.option.onShow();
+	        self.option.onShow && self.option.onShow();
 
 	        if (self.option.isNeedAddBox && !self.isCloneHeader) {
 
@@ -239,7 +238,7 @@
 	            height: BOX_HEIGHT
 	        };
 	        if (this.option.isNeedAddBox) {
-	            styleOpt = $.extend({}, styleOpt, {'zIndex': 3001})
+	            styleOpt = util.extend({}, styleOpt, {'zIndex': 3001})
 	        }
 
 	        this.container.css(styleOpt);
@@ -255,7 +254,7 @@
 	        var iHeight = $(this.viewHeader).height();
 	        var fakeHeaderHeight = iHeight + 20 + 'px';
 
-	        isIos && $.extend(cssRule, {'paddingTop': this.option.offsetTop, 'height': fakeHeaderHeight});
+	        isIos && util.extend(cssRule, {'paddingTop': this.option.offsetTop, 'height': fakeHeaderHeight});
 
 	        this.fakeHeader.css(cssRule)
 	            .appendTo(document.body);
@@ -274,18 +273,13 @@
 
 	module.exports = PopBox;
 
+
 /***/ },
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
-	var __WEBPACK_AMD_DEFINE_RESULT__;/* Zepto v1.2.0 - zepto event ajax form ie - zeptojs.com/license */
-	(function(global, factory) {
-	  if (true)
-	    !(__WEBPACK_AMD_DEFINE_RESULT__ = function() { return factory(global) }.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__))
-	  else
-	    factory(global)
-	}(this, function(window) {
-	  var Zepto = (function() {
+	/* Zepto 1.2.0 - zepto event ajax form ie touch - zeptojs.com/license */
+	var Zepto = module.exports = (function() {
 	  var undefined, key, $, classList, emptyArray = [], concat = emptyArray.concat, filter = emptyArray.filter, slice = emptyArray.slice,
 	    document = window.document,
 	    elementDisplay = {}, classCache = {},
@@ -1218,9 +1212,6 @@
 	  return $
 	})()
 
-	window.Zepto = Zepto
-	window.$ === undefined && (window.$ = Zepto)
-
 	;(function($){
 	  var _zid = 1, undefined,
 	      slice = Array.prototype.slice,
@@ -1358,7 +1349,9 @@
 	        event[predicate] = returnFalse
 	      })
 
-	      event.timeStamp || (event.timeStamp = Date.now())
+	      try {
+	        event.timeStamp || (event.timeStamp = Date.now())
+	      } catch (ignored) { }
 
 	      if (source.defaultPrevented !== undefined ? source.defaultPrevented :
 	          'returnValue' in source ? source.returnValue === false :
@@ -1490,7 +1483,6 @@
 	    event.initEvent(type, bubbles, true)
 	    return compatible(event)
 	  }
-
 	})(Zepto)
 
 	;(function($){
@@ -1907,7 +1899,6 @@
 	    }
 	    return this
 	  }
-
 	})(Zepto)
 
 	;(function(){
@@ -1925,20 +1916,256 @@
 	      }
 	    }
 	  }
-	})()
-	  return Zepto
-	}))
+	})(Zepto)
+
+	;(function($){
+	  var touch = {},
+	    touchTimeout, tapTimeout, swipeTimeout, longTapTimeout,
+	    longTapDelay = 750,
+	    gesture
+
+	  function swipeDirection(x1, x2, y1, y2) {
+	    return Math.abs(x1 - x2) >=
+	      Math.abs(y1 - y2) ? (x1 - x2 > 0 ? 'Left' : 'Right') : (y1 - y2 > 0 ? 'Up' : 'Down')
+	  }
+
+	  function longTap() {
+	    longTapTimeout = null
+	    if (touch.last) {
+	      touch.el.trigger('longTap')
+	      touch = {}
+	    }
+	  }
+
+	  function cancelLongTap() {
+	    if (longTapTimeout) clearTimeout(longTapTimeout)
+	    longTapTimeout = null
+	  }
+
+	  function cancelAll() {
+	    if (touchTimeout) clearTimeout(touchTimeout)
+	    if (tapTimeout) clearTimeout(tapTimeout)
+	    if (swipeTimeout) clearTimeout(swipeTimeout)
+	    if (longTapTimeout) clearTimeout(longTapTimeout)
+	    touchTimeout = tapTimeout = swipeTimeout = longTapTimeout = null
+	    touch = {}
+	  }
+
+	  function isPrimaryTouch(event){
+	    return (event.pointerType == 'touch' ||
+	      event.pointerType == event.MSPOINTER_TYPE_TOUCH)
+	      && event.isPrimary
+	  }
+
+	  function isPointerEventType(e, type){
+	    return (e.type == 'pointer'+type ||
+	      e.type.toLowerCase() == 'mspointer'+type)
+	  }
+
+	  $(document).ready(function(){
+	    var now, delta, deltaX = 0, deltaY = 0, firstTouch, _isPointerType
+
+	    if ('MSGesture' in window) {
+	      gesture = new MSGesture()
+	      gesture.target = document.body
+	    }
+
+	    $(document)
+	      .bind('MSGestureEnd', function(e){
+	        var swipeDirectionFromVelocity =
+	          e.velocityX > 1 ? 'Right' : e.velocityX < -1 ? 'Left' : e.velocityY > 1 ? 'Down' : e.velocityY < -1 ? 'Up' : null
+	        if (swipeDirectionFromVelocity) {
+	          touch.el.trigger('swipe')
+	          touch.el.trigger('swipe'+ swipeDirectionFromVelocity)
+	        }
+	      })
+	      .on('touchstart MSPointerDown pointerdown', function(e){
+	        if((_isPointerType = isPointerEventType(e, 'down')) &&
+	          !isPrimaryTouch(e)) return
+	        firstTouch = _isPointerType ? e : e.touches[0]
+	        if (e.touches && e.touches.length === 1 && touch.x2) {
+	          // Clear out touch movement data if we have it sticking around
+	          // This can occur if touchcancel doesn't fire due to preventDefault, etc.
+	          touch.x2 = undefined
+	          touch.y2 = undefined
+	        }
+	        now = Date.now()
+	        delta = now - (touch.last || now)
+	        touch.el = $('tagName' in firstTouch.target ?
+	          firstTouch.target : firstTouch.target.parentNode)
+	        touchTimeout && clearTimeout(touchTimeout)
+	        touch.x1 = firstTouch.pageX
+	        touch.y1 = firstTouch.pageY
+	        if (delta > 0 && delta <= 250) touch.isDoubleTap = true
+	        touch.last = now
+	        longTapTimeout = setTimeout(longTap, longTapDelay)
+	        // adds the current touch contact for IE gesture recognition
+	        if (gesture && _isPointerType) gesture.addPointer(e.pointerId)
+	      })
+	      .on('touchmove MSPointerMove pointermove', function(e){
+	        if((_isPointerType = isPointerEventType(e, 'move')) &&
+	          !isPrimaryTouch(e)) return
+	        firstTouch = _isPointerType ? e : e.touches[0]
+	        cancelLongTap()
+	        touch.x2 = firstTouch.pageX
+	        touch.y2 = firstTouch.pageY
+
+	        deltaX += Math.abs(touch.x1 - touch.x2)
+	        deltaY += Math.abs(touch.y1 - touch.y2)
+	      })
+	      .on('touchend MSPointerUp pointerup', function(e){
+	        if((_isPointerType = isPointerEventType(e, 'up')) &&
+	          !isPrimaryTouch(e)) return
+	        cancelLongTap()
+
+	        // swipe
+	        if ((touch.x2 && Math.abs(touch.x1 - touch.x2) > 30) ||
+	            (touch.y2 && Math.abs(touch.y1 - touch.y2) > 30))
+
+	          swipeTimeout = setTimeout(function() {
+	            if (touch.el){
+	              touch.el.trigger('swipe')
+	              touch.el.trigger('swipe' + (swipeDirection(touch.x1, touch.x2, touch.y1, touch.y2)))
+	            }
+	            touch = {}
+	          }, 0)
+
+	        // normal tap
+	        else if ('last' in touch)
+	          // don't fire tap when delta position changed by more than 30 pixels,
+	          // for instance when moving to a point and back to origin
+	          if (deltaX < 30 && deltaY < 30) {
+	            // delay by one tick so we can cancel the 'tap' event if 'scroll' fires
+	            // ('tap' fires before 'scroll')
+	            tapTimeout = setTimeout(function() {
+
+	              // trigger universal 'tap' with the option to cancelTouch()
+	              // (cancelTouch cancels processing of single vs double taps for faster 'tap' response)
+	              var event = $.Event('tap')
+	              event.cancelTouch = cancelAll
+	              // [by paper] fix -> "TypeError: 'undefined' is not an object (evaluating 'touch.el.trigger'), when double tap
+	              if (touch.el) touch.el.trigger(event)
+
+	              // trigger double tap immediately
+	              if (touch.isDoubleTap) {
+	                if (touch.el) touch.el.trigger('doubleTap')
+	                touch = {}
+	              }
+
+	              // trigger single tap after 250ms of inactivity
+	              else {
+	                touchTimeout = setTimeout(function(){
+	                  touchTimeout = null
+	                  if (touch.el) touch.el.trigger('singleTap')
+	                  touch = {}
+	                }, 250)
+	              }
+	            }, 0)
+	          } else {
+	            touch = {}
+	          }
+	          deltaX = deltaY = 0
+
+	      })
+	      // when the browser window loses focus,
+	      // for example when a modal dialog is shown,
+	      // cancel all ongoing events
+	      .on('touchcancel MSPointerCancel pointercancel', cancelAll)
+
+	    // scrolling the window indicates intention of the user
+	    // to scroll, not tap or swipe, so cancel all ongoing events
+	    $(window).on('scroll', cancelAll)
+	  })
+
+	  ;['swipe', 'swipeLeft', 'swipeRight', 'swipeUp', 'swipeDown',
+	    'doubleTap', 'tap', 'singleTap', 'longTap'].forEach(function(eventName){
+	    $.fn[eventName] = function(callback){ return this.on(eventName, callback) }
+	  })
+	})(Zepto)
+	  
 
 
 /***/ },
 /* 2 */
 /***/ function(module, exports) {
 
+	var util = {
+	    trim: function (str) {
+	        return str.replace(/^\s+|\s+$/g, '');
+	    },
+	    isString: function(obj){ return typeof obj == 'string' },
+
+	    isFunction: function (value) { return type(value) == "function" },
+
+	    isWindow: function (obj) { return obj != null && obj == obj.window },
+
+	    isDocument: function(obj) { return obj != null && obj.nodeType == obj.DOCUMENT_NODE },
+
+	    isObject: function(obj) { return type(obj) == "object" },
+
+	    isPlainObject: function (obj) {
+	        return isObject(obj) && !isWindow(obj) && Object.getPrototypeOf(obj) == Object.prototype
+	    },
+
+	    isArray: Array.isArray ||
+	    function(object){ return object instanceof Array },
+
+	    extend: function(target){
+	        var deep, args = [].slice.call(arguments, 1);
+	        if (typeof target == 'boolean') {
+	            deep = target
+	            target = args.shift()
+	        }
+	        args.forEach(function(arg){ extend(target, arg, deep) });
+	        return target;
+	    },
+
+	    formatFormData: function (data) {
+	        var arr = data.split('&');
+	        var itemData;
+	        var formData = {};
+
+	        arr.forEach(function(item, index) {
+
+	            itemData = item.split('=');
+	            formData[util.trim(itemData[0])] = util.trim(itemData[1]);
+	        });
+
+	        return formData;
+	    }
+
+	};
+	var class2type = {},
+	    toString = class2type.toString;
+
+	function type(obj) {
+	    return obj == null ? String(obj) :
+	    class2type[toString.call(obj)] || "object"
+	}
+
+	function extend(target, source, deep) {
+	    for (key in source)
+	        if (deep && (util.isPlainObject(source[key]) || util.isArray(source[key]))) {
+	            if (util.isPlainObject(source[key]) && !util.isPlainObject(target[key]))
+	                target[key] = {}
+	            if (isArray(source[key]) && !util.isArray(target[key]))
+	                target[key] = []
+	            extend(target[key], source[key], deep)
+	        }
+	        else if (source[key] !== undefined) target[key] = source[key]
+	}
+
+	module.exports = util;
+
+/***/ },
+/* 3 */
+/***/ function(module, exports) {
+
 	var boxTmpl, maskTmpl;
 
 	boxTmpl = '<div class="m-pop-box js-pop-box">\n</div>';
 
-	maskTmpl = '<div class="yo-mask js-box-mask" style="top: 44px;"></div>';
+	maskTmpl = '<div class="m-mask js-box-mask" style="top: 44px;"></div>';
 
 	module.exports = {
 	  boxTmpl: boxTmpl,

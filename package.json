@@ -1,7 +1,7 @@
 {
-  "name": "dragprogress",
+  "name": "slider",
   "version": "1.0.0",
-  "description": "drag progress",
+  "description": "slider filter",
   "main": "index.js",
   "dependencies": {
     "coffee-loader": "^0.7.2",
@@ -13,9 +13,12 @@
     "zepto": "^1.2.0",
     "zepto-touch": "0.0.4"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "exports-loader": "^0.6.4",
+    "script-loader": "^0.7.0"
+  },
   "scripts": {
-    "test": "dragprogress"
+    "test": "slider"
   },
   "repository": {
     "type": "git",

@@ -1,19 +1,19 @@
 html = '''
-<div class="m-dragprogress">
+<div class="m-slider">
     <h2 class="caption">价格区间</h2>
-    <div class="m-dragprogress-hd">
+    <div class="m-slider-hd">
         <ul class="range-list">
-            {{#prices}}
+            {{#data}}
             <li class="current" data-role="dp-point-name" style="left: {{left}}%">
                 <span class="price">{{{name}}}</span><span class="doc">·</span>
             </li>
-            {{/prices}}
+            {{/data}}
         </ul>
     </div>
-    <div class="m-dragprogress-bd">
-        <div class="range-bar" data-role="dp-progress">
-            <span class="range-pointer range-pointer-left" data-left="true" ></span>
-            <span class="range-pointer range-pointer-right" data-right="true"></span>
+    <div class="m-slider-bd">
+        <div class="slider-bar" data-role="slider-bar">
+            <span class="slider-handle slider-handle-left" data-left="true" ></span>
+            <span class="slider-handle slider-handle-right" data-right="true"></span>
         </div>
     </div>
 </div>

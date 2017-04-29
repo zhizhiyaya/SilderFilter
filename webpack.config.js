@@ -1,6 +1,6 @@
 var webpack = require('webpack');
 var path = require('path');
-
+// require('exports?window.Zepto!./zepto.js');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var extractCSS = new ExtractTextPlugin('/public/stylesheets/[name].css',{allChunks: true});
 var extractLESS = new ExtractTextPlugin('/public/stylesheets/[name].less',{allChunks: true});
@@ -12,10 +12,9 @@ module.exports = {
 
     //页面入口文件配置
     entry: {
-		dragFilterTest: './public/scripts/dragFilterTest.js'
-        // dragFilter: './public/scripts/dragFilter.js',
-        //dragProgress: './module/dragProgress/index.js',
-        //popBox: './module/popBox/index.js'
+		sliderFilter: './public/scripts/sliderFilterTest.js'
+        // slider: './module/slider/index.js',
+        // popBox: './module/popBox/index.js'
     },
 
     //入口文件输出配置
@@ -27,7 +26,8 @@ module.exports = {
     // 加载器配置
         loaders: [
             { test: /\.coffee$/, loader: "coffee-loader" },
-            { test: /\.(coffee\.md|litcoffee)$/, loader: "coffee-loader?literate" }
+            { test: /\.(coffee\.md|litcoffee)$/, loader: "coffee-loader?literate" },
+			{ test: require.resolve('zepto'), loader: 'exports-loader?window.Zepto!script-loader' }
         ]
     },
     resolve: {

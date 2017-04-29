@@ -42,7 +42,7 @@ PopBox.prototype = {
         if (this.option.isNeedAddBox) {
 
             var boxMask = !this.hasBox && $(document.body).find(BOX_MASK);
-            if (util.isArray(boxMask) && boxMask.length === 0) {
+            if (boxMask.length === 0) {
 
                 this._addPopBox();
             }
@@ -145,7 +145,7 @@ PopBox.prototype = {
         }, ANIMATION_DURATION * 2);
 
         // 恢复手势回退
-        self.option.onHide();
+        self.option.onHide && self.option.onHide();
     },
     /**
      * @method 不带动画的隐藏 BOX, 比如在发现页切换到别的页面时

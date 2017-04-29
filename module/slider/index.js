@@ -1,11 +1,12 @@
+var $ = require('zepto');
 require('zepto-touch');
 
 var Hogan = require('hogan.js');
 var util = require('../common/util.js');
-var dragprogressTpl = require('./index.coffee'),
+var sliderTpl = require('./index.coffee'),
     PRICE_CONSTANT = require('./PRICE_CONSTANT.js');
 
-function DragProgress(data) {
+function Slider(data) {
 
     this.data = this.formatData(data || PRICE_CONSTANT);
     this.maxWidth = 0; // 纪录的实际的 px
@@ -13,9 +14,9 @@ function DragProgress(data) {
     this.init();
 }
 
-DragProgress.prototype = {
+Slider.prototype = {
 
-    constructor: DragProgress,
+    constructor: Slider,
 
     init: function () {
         this.getSelectedData();
@@ -26,58 +27,46 @@ DragProgress.prototype = {
     bindEvents: function () {
         var self = this;
 
-        // progress 作为一个整体,只需改变其 left 和 width, 因为两个按钮相对于它绝对定位的
+        // bar 作为一个整体,只需改变其 left 和 width, 因为两个按钮相对于它绝对定位的
         // 给两个 按钮注册事件, 是为了区分左右 , 更好处理逻辑
-        self.progress
-            .on('touchstart', '.range-pointer ', self._dragStart.bind(self))
-            .on('touchmove', '.range-pointer ', self._dragMove.bind(self))
-            .on('touchend', '.range-pointer ', self._dragEnd.bind(self));
+        self.bar
+            .on('touchstart', '.slider-handle', self._dragStart.bind(self))
+            .on('touchmove', '.slider-handle', self._dragMove.bind(self))
+            .on('touchend', '.slider-handle', self._dragEnd.bind(self));
 
         self.container.on('tap', '.js-submit', function () {
             self.filter();
         });
-
-        //self.mask.on('touchmove', function (e) {
-        //    e.stopPropagation();
-        //});
-        //
-        //self.mask.on('tap', function (e) {
-        //    e.preventDefault();
-        //    self.dragProgress.reviseProgress();
-        //    self.animateHide();
-        //});
     },
 
     initElement: function () {
 
-        var template = Hogan.compile(dragprogressTpl);
-
+        var template = Hogan.compile(sliderTpl);
         this.container = $(template.render({
-            'prices': this.data
-        }));
-        //
+			'data': this.data
+		}));
         //// 拖拽的进度条
-        this.progress = this.container.find('[data-role="dp-progress"]');
+        this.bar = this.container.find('[data-role="slider-bar"]');
         //// 对应进度条的相应的文案
         this.points = this.container.find('[data-role="dp-point-name"]');
     },
-    setProgressParam: function () {
-        this.maxWidth = this.progress.width();
+    setBarParam: function () {
+        this.maxWidth = this.bar.width();
     },
     _dragStart: function (e) {
         e.preventDefault();
 
         if (!this.maxWidth) {
-            this.setProgressParam();
+            this.setBarParam();
         }
         var targetTouches = e.targetTouches[0];
 
         this.prvTouchX = targetTouches.clientX;
 
-        this.realLeft = parseInt(this.progress.css('left'), 10) / 100;
-        this.realRight = parseInt(this.progress.css('right'), 10) / 100;
+        this.realLeft = parseInt(this.bar.css('left'), 10) / 100;
+        this.realRight = parseInt(this.bar.css('right'), 10) / 100;
 
-        this.progress.removeClass('transition');
+        this.bar.removeClass('transition');
     },
     _dragMove: function (e) {
         e.preventDefault();
@@ -99,7 +88,7 @@ DragProgress.prototype = {
             this.realRight = 1 - this.minimum - this.realLeft;
         }
 
-        this.progress.addClass('transition');
+        this.bar.addClass('transition');
 
         this._setStyle({
             'left': this.realLeft,
@@ -119,9 +108,8 @@ DragProgress.prototype = {
     },
     //判断触点倾向与左边还是右边
     _towardLeftOrRight: function (target, xSpacing) {
-        var targetData = $(target).data(),
-            towardLeft = !!targetData.left,
-            progressStyle = {},
+        var towardLeft = !!$(target).data('left'),
+            barStyle = {},
             isMin = this._isMinStatus();
 
         var curLeft = this.reviseRealPos(this.realLeft + xSpacing / this.maxWidth);
@@ -135,11 +123,11 @@ DragProgress.prototype = {
 
             if (xSpacing > 0 && isMin) {
                 this.realRight = curRight;
-                progressStyle = {'right': curRight};
+                barStyle = {'right': curRight};
             }
 
             this.realLeft = curLeft;
-            progressStyle = util.extend({}, progressStyle, {'left': curLeft});
+            barStyle = util.extend({}, barStyle, {'left': curLeft});
         } else {
 
             if (this.realRight <= 0 && xSpacing > 0 || this.realRight >= this.maximum && xSpacing < 0) {
@@ -147,15 +135,15 @@ DragProgress.prototype = {
             }
             if (isMin && xSpacing < 0) {
                 this.realLeft = curLeft;
-                progressStyle = {'left': curLeft};
+                barStyle = {'left': curLeft};
             }
 
             this.realRight = curRight;
-            progressStyle = util.extend({}, progressStyle, {'right': curRight});
+            barStyle = util.extend({}, barStyle, {'right': curRight});
         }
         var curWidth = 1 - this.realLeft - this.realRight;
         this.curWidth = curWidth;
-        this._setStyle(progressStyle);
+        this._setStyle(barStyle);
     },
     reviseRealPos: function (pos) {
         return pos <= this.maximum ? pos < 0 ? 0 : pos : this.maximum;
@@ -178,14 +166,14 @@ DragProgress.prototype = {
 
         this.rightIndex = Math.round(this.data.length - 1 - this.realRight / this.minimum);
     },
-    _setStyle: function (progressStyle) {
+    _setStyle: function (barStyle) {
 
         this._setSelectedDataIndex();
 
-        for (key in progressStyle) {
-            progressStyle[key] = progressStyle[key] * 100 + '%';
+        for (key in barStyle) {
+            barStyle[key] = barStyle[key] * 100 + '%';
         }
-        this.progress.css(progressStyle);
+        this.bar.css(barStyle);
 
         if (this.leftIndex > 0) {
 
@@ -218,14 +206,14 @@ DragProgress.prototype = {
                 return elem;
             });
     },
-    reviseProgress: function () {
+    reviseBar: function () {
         var len = this.data.length;
         var allSelect = this.data[0].value + ',' + this.data[len - 1].value;
         if (this.selectedData === '' || this.selectedData === allSelect) {
-            this.resetProgress();
+            this.resetBar();
         }
     },
-    resetProgress: function () {
+    resetBar: function () {
         this.realLeft = 0;
         this.realRight = 0;
         this._setStyle({
@@ -235,4 +223,4 @@ DragProgress.prototype = {
     }
 };
 
-module.exports = DragProgress;
+module.exports = Slider;

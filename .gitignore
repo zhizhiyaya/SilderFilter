@@ -1,6 +1,6 @@
 # node.js
 #
-node_modules/
+# node_modules/
 npm-debug.log
 
 project.xcworkspace
@@ -9,4 +9,3 @@ project.xcworkspace
 .idea
 .gradle
 local.properties
-

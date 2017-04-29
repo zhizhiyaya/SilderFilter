@@ -2,22 +2,21 @@ require('zepto-touch');
 
 var util = require('../../module/common/util.js');
 
-var PopBox = require('../../module/popBox/index.js'),
-    DragProgress = require('../../module/dragProgress/index.js');
+var PopBox = require('../../module/popBox/index.js');
+var Slider = require('../../module/slider/index.js');
 
-function DragFilter (options) {
+function SliderFilter(options) {
     PopBox.call(this, options);
     this.init();
 }
 
-DragFilter.prototype = {
-    constructor: DragFilter,
+SliderFilter.prototype = {
+    constructor: SliderFilter,
     init: function () {
-        this.dragProgress = new DragProgress();
-        this.initElement();
-        this.dragProgress.container.prependTo(this.container);
+        this.slider = new Slider();
+        this.initElement();debugger 
+        this.slider.container.prependTo(this.container);
         this.renderBox();
-		debugger
 		this.addSwitchEvent();
         this.addEvent();
     },
@@ -36,13 +35,13 @@ DragFilter.prototype = {
 
         self.mask.on('tap', function (e) {
             e.preventDefault();
-            self.dragProgress.reviseProgress();
+            self.slider.reviseProgress();
             self.animateHide();
         });
     },
     filter: function () {
         var self = this;
-        var filterData = self.dragProgress.getSelectedData();
+        var filterData = self.slider.getSelectedData();
 
         if (filterData ){
             self.option.callback && self.option.callback(filterData);
@@ -56,10 +55,10 @@ DragFilter.prototype = {
         self.animateHide();
     },
     reset: function () {
-        this.dragProgress.resetProgress();
+        this.slider.resetProgress();
         this.filter();
     }
 };
-DragFilter.prototype = util.extend({}, new PopBox(), DragFilter.prototype);
+SliderFilter.prototype = util.extend({}, new PopBox(), SliderFilter.prototype);
 
-module.exports = DragFilter;
+module.exports = SliderFilter;
